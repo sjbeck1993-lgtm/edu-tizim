@@ -1,0 +1,24 @@
+.students-page {
+    animation: fadeIn 0.4s ease;
+}
+
+.students-table-container {
+    overflow-x: auto;
+    margin-top: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    border-radius: var(--radius-lg);
+    background-color: var(--bg-card);
+}
+
+.group-badge {
+    padding: 0.25rem 0.75rem;
+    background-color: rgba(59, 130, 246, 0.1);
+    color: var(--primary);
+    border-radius: 2rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.modal-content.mt-4 {
+    margin-top: 2rem;
+}

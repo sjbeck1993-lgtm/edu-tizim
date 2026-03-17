@@ -1,0 +1,260 @@
+.attendance-page {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.group-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: white;
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s;
+}
+
+.group-selector:hover {
+    border-color: var(--primary-blue);
+    background-color: rgba(37, 99, 235, 0.05);
+}
+
+.date-display {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: var(--primary-blue);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    box-shadow: var(--shadow-sm);
+}
+
+.attendance-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    background-color: var(--surface-color);
+    padding: 1rem;
+    border-radius: 0.75rem;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+}
+
+.att-stat-box {
+    display: flex;
+    flex-direction: column;
+    padding: 0.5rem 1.5rem;
+    border-right: 1px solid var(--border-color);
+}
+
+.att-stat-box.total .att-value {
+    color: var(--primary-blue);
+}
+
+.att-stat-box.present .att-value {
+    color: var(--success);
+}
+
+.att-stat-box.absent .att-value {
+    color: var(--danger);
+}
+
+.att-stat-box.absent {
+    border-right: none;
+}
+
+.att-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+}
+
+.att-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.att-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 1rem;
+}
+
+.smart-attendance-banner {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(16, 185, 129, 0.1));
+    border: 1px solid rgba(37, 99, 235, 0.2);
+    padding: 1rem 1.5rem;
+    border-radius: 0.75rem;
+}
+
+.banner-icon {
+    background-color: white;
+    width: 48px;
+    height: 48px;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-blue);
+    box-shadow: var(--shadow-sm);
+}
+
+.banner-content {
+    flex: 1;
+}
+
+.banner-content h4 {
+    margin: 0 0 0.25rem 0;
+    color: var(--primary-blue);
+    font-size: 1.05rem;
+}
+
+.banner-content p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-main);
+}
+
+.face-id-btn {
+    background-color: white;
+    border-color: var(--primary-blue);
+    color: var(--primary-blue);
+}
+
+.face-id-btn:hover {
+    background-color: var(--primary-blue);
+    color: white;
+}
+
+.students-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+}
+
+.student-card {
+    background-color: var(--surface-color);
+    border-radius: 0.75rem;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: var(--shadow-sm);
+    border: 2px solid transparent;
+    user-select: none;
+}
+
+.student-card:active {
+    transform: scale(0.95);
+}
+
+.student-card.present {
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.student-card.present:hover {
+    border-color: var(--danger);
+    background-color: rgba(239, 68, 68, 0.05);
+}
+
+.student-card.absent {
+    border-color: var(--danger);
+    background-color: rgba(239, 68, 68, 0.05);
+}
+
+.student-card.absent:hover {
+    border-color: var(--success);
+    background-color: rgba(16, 185, 129, 0.05);
+}
+
+.status-icon {
+    margin-bottom: 0.75rem;
+    transition: all 0.2s;
+}
+
+.success-icon {
+    color: var(--success);
+}
+
+.danger-icon {
+    color: var(--danger);
+}
+
+.student-card.present:hover .status-icon {
+    color: var(--danger);
+}
+
+.student-card.present:hover .status-icon svg {
+    opacity: 0.5;
+}
+
+.student-name {
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--text-main);
+    margin-bottom: 0.5rem;
+}
+
+.click-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.student-card:hover .click-hint {
+    opacity: 1;
+}
+
+@media (max-width: 1024px) {
+    .attendance-stats {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .att-stat-box {
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        padding: 0.75rem;
+    }
+
+    .att-actions {
+        margin-left: 0;
+        margin-top: 1rem;
+        justify-content: space-between;
+    }
+}
+
+@media (max-width: 768px) {
+    .smart-attendance-banner {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .header-actions {
+        flex-direction: column;
+        width: 100%;
+        gap: 0.75rem;
+    }
+
+    .group-selector,
+    .date-display {
+        width: 100%;
+        justify-content: center;
+    }
+}

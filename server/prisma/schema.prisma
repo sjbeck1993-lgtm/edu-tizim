@@ -1,0 +1,151 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             Int             @id @default(autoincrement())
+  name           String
+  phone          String          @unique
+  password       String
+  role           Role            @default(STUDENT)
+  telegramId     String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  attendances    Attendance[]
+  groupsTaught   Group[]         @relation("TeacherGroups")
+  payments       Payment[]
+  studentProfile StudentProfile?
+  teacherProfile TeacherProfile?
+  submissions    Submission[]
+}
+
+model TeacherProfile {
+  id         Int    @id @default(autoincrement())
+  userId     Int    @unique
+  subject    String
+  baseSalary Float
+  rating     Float  @default(0)
+  bonus      Float  @default(0)
+  user       User   @relation(fields: [userId], references: [id])
+}
+
+model StudentProfile {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  level     Int      @default(1)
+  coins     Int      @default(0)
+  groupId   Int?
+  joinedAt  DateTime @default(now())
+  subEndsAt DateTime?
+  group     Group?   @relation(fields: [groupId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Lead {
+  id        Int        @id @default(autoincrement())
+  name      String
+  course    String
+  phone     String
+  source    String
+  status    LeadStatus @default(NEW)
+  reason    String?
+  createdAt DateTime   @default(now())
+}
+
+model Course {
+  id           Int     @id @default(autoincrement())
+  name         String
+  monthlyPrice Float
+  description  String?
+  groups       Group[]
+}
+
+model Group {
+  id          Int              @id @default(autoincrement())
+  name        String
+  courseId    Int
+  teacherId   Int
+  schedule    String           
+  classDays   Int[]            // 1=Dush, 2=Sesh, 3=Chor, 4=Pay, 5=Jum, 6=Shan, 0=Yak
+  classTime   String?          // 14:00
+  attendances Attendance[]
+  course      Course           @relation(fields: [courseId], references: [id])
+  teacher     User             @relation("TeacherGroups", fields: [teacherId], references: [id])
+  students    StudentProfile[]
+  tasks       Task[]
+}
+
+model Payment {
+  id          Int      @id @default(autoincrement())
+  studentId   Int
+  amount      Float
+  paymentDate DateTime @default(now())
+  periodStart DateTime?
+  month       String
+  status      String   @default("paid")
+  method      String
+  receiptUrl  String?
+
+  student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
+
+model Attendance {
+  id        Int      @id @default(autoincrement())
+  studentId Int
+  groupId   Int
+  date      DateTime @default(now())
+  present   Boolean  @default(true)
+  group     Group    @relation(fields: [groupId], references: [id])
+  student   User     @relation(fields: [studentId], references: [id])
+}
+
+enum Role {
+  ADMIN
+  TEACHER
+  STUDENT
+  PARENT
+}
+
+enum LeadStatus {
+  NEW
+  THINKING
+  REJECTED
+}
+
+model Task {
+  id          Int          @id @default(autoincrement())
+  title       String
+  deadline    DateTime
+  groupId     Int
+  totalCount  Int          @default(0)
+  createdAt   DateTime     @default(now())
+  status      String       @default("active") // active, urgent, completed
+  group       Group        @relation(fields: [groupId], references: [id])
+  submissions Submission[]
+}
+
+model Submission {
+  id        Int      @id @default(autoincrement())
+  taskId    Int
+  studentId Int
+  score     Int?
+  status    String   @default("pending") // pending, checked
+  createdAt DateTime @default(now())
+  student   User     @relation(fields: [studentId], references: [id])
+  task      Task     @relation(fields: [taskId], references: [id])
+}
+
+model Material {
+  id        Int      @id @default(autoincrement())
+  name      String
+  type      String
+  size      String
+  courseId  Int?
+  groupId   Int?
+  createdAt DateTime @default(now())
+}
