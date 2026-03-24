@@ -15,6 +15,7 @@ const Finance = () => {
     // Form and Modal states
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSmsModalOpen, setIsSmsModalOpen] = useState(false);
+    const [selectedReceipt, setSelectedReceipt] = useState(null);
     const [studentsList, setStudentsList] = useState([]);
     const [formData, setFormData] = useState({ studentId: '', amount: '300000', month: new Date().toISOString().split('T')[0], method: 'Naqd', status: 'paid' });
 
@@ -99,8 +100,8 @@ const Finance = () => {
         }
     };
 
-    const handleViewReceipt = () => {
-        toast('Terminal cheki ochilmoqda...', { icon: '🧾' });
+    const handleViewReceipt = (payment) => {
+        setSelectedReceipt(payment);
     };
 
     const handleAddPayment = async (e) => {
@@ -277,7 +278,7 @@ const Finance = () => {
                                         {payment.status === 'pending' ? (
                                             <>
                                                 {payment.receiptUrl && (
-                                                    <button className="btn btn-sm btn-outline" onClick={() => window.open(`http://localhost:5000${payment.receiptUrl}`, '_blank')}>
+                                                    <button className="btn btn-sm btn-outline" onClick={() => window.open(`https://edu-tizim-production.up.railway.app${payment.receiptUrl}`, '_blank')}>
                                                         Chekni ko'rish
                                                     </button>
                                                 )}
@@ -290,7 +291,7 @@ const Finance = () => {
                                                 <MessageSquare size={14} className="mr-1" /> SMS yuborish
                                             </button>
                                         ) : (
-                                            <button className="btn btn-sm btn-outline" onClick={handleViewReceipt}>Chekni ko'rish</button>
+                                            <button className="btn btn-sm btn-outline" onClick={() => handleViewReceipt(payment)}>Chekni ko'rish</button>
                                         )}
                                         <button
                                             className="icon-btn-small text-danger"
@@ -411,6 +412,43 @@ const Finance = () => {
                             <button className="btn btn-primary flex items-center justify-center gap-2" onClick={() => handleBulkSMS('bulk-private')}>
                                 <MessageSquare size={18} /> Alohida Kontaktlarga (Lichkalarga) Yuborish
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* RECEIPT MODAL */}
+            {selectedReceipt && (
+                <div className="modal-overlay" onClick={() => setSelectedReceipt(null)}>
+                    <div className="modal-content" style={{ maxWidth: '360px', fontFamily: 'monospace' }} onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="modal-title m-0" style={{ fontSize: '16px' }}>🧾 To'lov Cheki</h3>
+                            <button className="icon-btn-small" onClick={() => setSelectedReceipt(null)}><X size={20} /></button>
+                        </div>
+                        <div style={{ borderTop: '2px dashed #ccc', borderBottom: '2px dashed #ccc', padding: '14px 0', margin: '8px 0' }}>
+                            <div style={{ textAlign: 'center', marginBottom: '12px' }}>
+                                <strong style={{ fontSize: '18px' }}>SmartCenter</strong><br />
+                                <small style={{ color: '#888' }}>O'quv markazi to'lov tizimi</small>
+                            </div>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                                <tbody>
+                                    <tr><td style={{ padding: '4px 0', color: '#888' }}>O'quvchi:</td><td style={{ textAlign: 'right', fontWeight: 600 }}>{selectedReceipt.student}</td></tr>
+                                    <tr><td style={{ padding: '4px 0', color: '#888' }}>Guruh:</td><td style={{ textAlign: 'right' }}>{selectedReceipt.group}</td></tr>
+                                    <tr><td style={{ padding: '4px 0', color: '#888' }}>Davr:</td><td style={{ textAlign: 'right' }}>{selectedReceipt.month}</td></tr>
+                                    <tr><td style={{ padding: '4px 0', color: '#888' }}>To'lov turi:</td><td style={{ textAlign: 'right' }}>{selectedReceipt.method}</td></tr>
+                                    <tr><td style={{ padding: '4px 0', color: '#888' }}>Sana:</td><td style={{ textAlign: 'right' }}>{selectedReceipt.date}</td></tr>
+                                    <tr style={{ borderTop: '1px solid #eee' }}><td style={{ padding: '8px 0', fontWeight: 700, fontSize: '15px' }}>JAMI:</td><td style={{ textAlign: 'right', fontWeight: 700, fontSize: '15px', color: 'var(--success)' }}>{selectedReceipt.amount}</td></tr>
+                                    <tr><td style={{ padding: '4px 0', color: '#888' }}>Holat:</td><td style={{ textAlign: 'right' }}><span style={{ color: 'var(--success)', fontWeight: 600 }}>✅ To'langan</span></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '11px', color: '#aaa' }}>
+                            Chek ID: #{selectedReceipt.id?.slice(0, 8)?.toUpperCase()}<br />
+                            Rahmat! Yana keling. 😊
+                        </div>
+                        <div className="flex gap-2 justify-center mt-4">
+                            <button className="btn btn-outline" onClick={() => window.print()}>🖨️ Chop etish</button>
+                            <button className="btn btn-primary" onClick={() => setSelectedReceipt(null)}>Yopish</button>
                         </div>
                     </div>
                 </div>
