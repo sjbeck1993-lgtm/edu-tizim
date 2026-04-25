@@ -49,22 +49,27 @@ const Courses = () => {
     const fetchCourses = async () => {
         try {
             const res = await axiosClient.get('/courses');
-            const data = res.data.map(c => ({
-                id: c.id,
-                name: c.name,
-                rawGroups: c.groups || [], // Saqlab olamiz
-                groups: c.groups?.length || 0,
-                students: c.groups?.reduce((acc, curr) => acc + (curr.students?.length || 0), 0) || 0,
-                price: new Intl.NumberFormat('uz-UZ').format(c.monthlyPrice) + ' UZS'
-            }));
+            const data = res.data.map(c => {
+                const groups = c.groups || [];
+                const studentsCount = groups.reduce((acc, curr) => acc + (curr.students?.length || 0), 0);
+                return {
+                    id: c.id,
+                    name: c.name,
+                    rawGroups: groups,
+                    groups: groups.length,
+                    students: studentsCount,
+                    price: new Intl.NumberFormat('uz-UZ').format(c.monthlyPrice || 0) + ' UZS'
+                };
+            });
             setCourses(data);
             if (data.length > 0) {
                 setGroupData(prev => ({ ...prev, courseId: data[0].id }));
                 setMaterialData(prev => ({ ...prev, courseId: data[0].id }));
             }
         } catch (error) {
-            console.error(error);
-            toast.error(error.response?.data?.message || "Kurslarni yuklashda xatolik yuz berdi");
+            console.error('Fetch Courses Error:', error);
+            const msg = error.response?.data?.message || error.message || "Kurslarni yuklashda xatolik";
+            toast.error(msg);
         } finally {
             setLoading(false);
         }
