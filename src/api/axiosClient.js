@@ -3,7 +3,7 @@ import axiosInstance from 'axios';
 
 // Base API instance configuration
 const axiosClient = axiosInstance.create({
-    baseURL: import.meta.env.VITE_API_URL || 'https://edu-tizim-backend.onrender.com/api',
+    baseURL: 'https://edu-tizim-backend.onrender.com/api',
     headers: {
         'Content-Type': 'application/json',
     },
