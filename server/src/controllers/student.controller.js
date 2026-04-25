@@ -90,7 +90,16 @@ exports.getAllStudents = async (req, res) => {
 // Yangi o'quvchi (Student) yaratish (Admin orqali)
 exports.createStudent = async (req, res) => {
     try {
-        const { name, phone, password, groupId, joinedAt } = req.body;
+        console.log('--- NEW STUDENT REQUEST ---', req.body);
+        let { name, phone, password, groupId, joinedAt } = req.body;
+        
+        if (!name || !phone) {
+            return res.status(400).json({ message: "Ism va telefon raqam majburiy!" });
+        }
+
+        // Clean phone number: remove spaces and extra characters if any
+        phone = phone.replace(/\s/g, '');
+
         const hashedPassword = await bcrypt.hash(password || '123456', 10);
 
         const newStudent = await prisma.user.create({
@@ -101,7 +110,7 @@ exports.createStudent = async (req, res) => {
                 role: 'STUDENT',
                 studentProfile: {
                     create: {
-                        groupId: groupId ? parseInt(groupId) : null,
+                        groupId: groupId && groupId !== "" ? parseInt(groupId) : null,
                         joinedAt: joinedAt ? new Date(joinedAt) : new Date()
                     }
                 }
@@ -110,35 +119,42 @@ exports.createStudent = async (req, res) => {
         });
 
         // Agar guruhga qo'shilgan bo'lsa, avtomatik birinchi qarzni yozamiz
-        if (groupId) {
-            const group = await prisma.group.findUnique({
-                where: { id: parseInt(groupId) },
-                include: { course: true }
-            });
-            if (group && group.course) {
-                const joinDateObj = joinedAt ? new Date(joinedAt) : new Date();
-
-                const monthsName = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
-                const formattedDate = monthsName[joinDateObj.getMonth()];
-
-                await prisma.payment.create({
-                    data: {
-                        studentId: newStudent.id,
-                        amount: group.course.monthlyPrice,
-                        month: formattedDate,
-                        periodStart: joinDateObj,
-                        method: '-',
-                        status: 'debt'
-                    }
+        if (groupId && groupId !== "") {
+            try {
+                const group = await prisma.group.findUnique({
+                    where: { id: parseInt(groupId) },
+                    include: { course: true }
                 });
+                if (group && group.course) {
+                    const joinDateObj = joinedAt ? new Date(joinedAt) : new Date();
+                    const monthsName = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
+                    const formattedDate = monthsName[joinDateObj.getMonth()];
+
+                    await prisma.payment.create({
+                        data: {
+                            studentId: newStudent.id,
+                            amount: group.course.monthlyPrice,
+                            month: formattedDate,
+                            periodStart: joinDateObj,
+                            method: '-',
+                            status: 'debt'
+                        }
+                    });
+                }
+            } catch (pErr) {
+                console.error('⚠️ Qarz yozishda xato (lekin o\'quvchi yaratildi):', pErr);
             }
         }
 
+        console.log('✅ O\'QUVCHI QO\'SHILDI:', newStudent.id);
         res.status(201).json({ message: "O'quvchi qo'shildi!", student: newStudent });
     } catch (error) {
+        console.error('❌ STUDENT CREATE ERROR:', error);
         require('fs').appendFileSync('student-error.log', new Date().toISOString() + ' ERROR in createStudent: ' + error.stack + '\nBody: ' + JSON.stringify(req.body) + '\n\n');
-        if (error.code === 'P2002') return res.status(400).json({ message: "Bu raqam band!" });
-        res.status(500).json({ message: "Xatolik yuz berdi! Balki raqam banddir." });
+        
+        if (error.code === 'P2002') return res.status(400).json({ message: "Bu telefon raqami allaqachon ro'yxatga olingan!" });
+        
+        res.status(500).json({ message: "Xatolik yuz berdi: " + error.message });
     }
 };
 

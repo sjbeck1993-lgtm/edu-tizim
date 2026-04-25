@@ -27,14 +27,24 @@ const courseController = {
 
     createCourse: async (req, res) => {
         try {
+            console.log('--- NEW COURSE REQUEST ---', req.body);
             const { name, monthlyPrice, description } = req.body;
+            
+            if (!name || !monthlyPrice) {
+                return res.status(400).json({ message: "Kurs nomi va narxi majburiy!" });
+            }
+
             const newCourse = await prisma.course.create({
-                data: { name, monthlyPrice: parseFloat(monthlyPrice), description }
+                data: { 
+                    name, 
+                    monthlyPrice: parseFloat(monthlyPrice) || 0, 
+                    description 
+                }
             });
             res.status(201).json({ message: "Yangi kurs yaratildi!", course: newCourse });
         } catch (error) {
-            console.error(error);
-            res.status(500).json({ message: "Kurs qo'shishda xatolik yuz berdi" });
+            console.error('❌ COURSE CREATE ERROR:', error);
+            res.status(500).json({ message: "Kurs qo'shishda xatolik yuz berdi: " + error.message });
         }
     },
 
@@ -82,12 +92,18 @@ const courseController = {
 
     createGroup: async (req, res) => {
         try {
+            console.log('--- NEW GROUP REQUEST ---', req.body);
             const { courseId, name, teacherId, schedule, classDays, classTime } = req.body;
+            
+            if (!courseId || !name) {
+                return res.status(400).json({ message: "Kurs va guruh nomi majburiy!" });
+            }
+
             const newGroup = await prisma.group.create({
                 data: {
                     courseId: parseInt(courseId),
                     name,
-                    teacherId: teacherId ? parseInt(teacherId) : undefined,
+                    teacherId: teacherId ? parseInt(teacherId) : null,
                     schedule: schedule || "Belgilanmagan",
                     classDays: classDays || [],
                     classTime: classTime || null
@@ -95,8 +111,8 @@ const courseController = {
             });
             res.status(201).json({ message: "Yangi guruh ochildi", group: newGroup });
         } catch (error) {
-            console.error(error);
-            res.status(500).json({ message: "Guruh qo'shishda xato yuz berdi" });
+            console.error('❌ GROUP CREATE ERROR:', error);
+            res.status(500).json({ message: "Guruh qo'shishda xato yuz berdi: " + error.message });
         }
     },
 
