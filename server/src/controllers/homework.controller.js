@@ -35,6 +35,7 @@ exports.getAllTasks = async (req, res) => {
 // Create a new Task
 exports.createTask = async (req, res) => {
     try {
+        console.log('--- NEW TASK REQUEST ---', req.body);
         const { title, groupId, deadline } = req.body;
 
         const group = await prisma.group.findUnique({
@@ -48,8 +49,8 @@ exports.createTask = async (req, res) => {
             data: {
                 title,
                 groupId: parseInt(groupId),
-                deadline: new Date(deadline),
-                totalCount: group.students.length, // Capture total group members size
+                deadline: deadline ? new Date(deadline) : new Date(Date.now() + 86400000 * 2), // 2 kun keyin
+                totalCount: group.students.length,
                 status: 'active'
             }
         });
