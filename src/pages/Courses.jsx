@@ -64,7 +64,7 @@ const Courses = () => {
             }
         } catch (error) {
             console.error(error);
-            toast.error("Kurslarni yuklashda xatolik yuz berdi");
+            toast.error(error.response?.data?.message || "Kurslarni yuklashda xatolik yuz berdi");
         } finally {
             setLoading(false);
         }
@@ -132,7 +132,7 @@ const Courses = () => {
             setFormData({ name: '', monthlyPrice: '' });
             fetchCourses(); // refresh
         } catch (error) {
-            toast.error("Kurs ma'lumotlarini saqlashda xato!");
+            toast.error(error.response?.data?.message || "Kurs ma'lumotlarini saqlashda xato!");
         }
     };
 
@@ -176,7 +176,7 @@ const Courses = () => {
             if (isGroupDetailsModalOpen) setIsGroupDetailsModalOpen(false);
 
         } catch (error) {
-            toast.error("Guruh saqlashda xatolik");
+            toast.error(error.response?.data?.message || "Guruh saqlashda xatolik");
         }
     };
 
