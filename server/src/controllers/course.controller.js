@@ -20,8 +20,8 @@ const courseController = {
             });
             res.json(courses);
         } catch (error) {
-            console.error(error);
-            res.status(500).json({ message: "Kurslarni yuklashda xatolik yuz berdi" });
+            console.error('❌ GET ALL COURSES ERROR:', error);
+            res.status(500).json({ message: "Kurslarni yuklashda xatolik yuz berdi: " + error.message });
         }
     },
 
