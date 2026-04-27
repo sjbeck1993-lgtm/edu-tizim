@@ -245,6 +245,12 @@ const paymentController = {
 
                     // Send separate message to each group
                     for (const [targetChatId, data] of Object.entries(groupedDebts)) {
+                        // AGAR targetChatId umumiy chatId ga teng bo'lsa va bu guruh nomi 'Umumiy' bo'lsa, uni o'tkazib yuboramiz
+                        if (targetChatId === chatId) {
+                            console.log(`Skipping general group notification for ${data.students.length} students.`);
+                            continue; 
+                        }
+
                         let groupMsg = `⚠️ <b>${data.groupName.toUpperCase()} GURUHI: TO'LOV ESLATMASI!</b>\n\n`;
                         let totalDebt = 0;
 
@@ -263,11 +269,13 @@ const paymentController = {
                         }
                     }
 
-                    return res.json({ message: "Qarzdorlar ro'yxati tegishli guruhlarga yuborildi!" });
+                    return res.json({ message: "Xabarlar faqat sozlangan guruhlarga yuborildi!" });
                 }
                     for (const d of debtStudents) {
                         const groupName = d.student.studentProfile?.group?.name || '';
-                        const groupChatId = d.student.studentProfile?.group?.telegramChatId || chatId; // Agar guruh ID bo'lmasa, umumiyga
+                        const groupChatId = d.student.studentProfile?.group?.telegramChatId;
+
+                        if (!groupChatId) continue;
 
                         const privateMsg = `🔔 <b>TO'LOV ESLATMASI:</b>\n\nHurmatli <b>${d.student.name}</b> ota-onalari, sizning <b>${groupName}</b> kursi uchun <b>${d.amount}</b> so'm qarzdorligingiz mavjud. <i>(Davr: ${d.month})</i>\n\nIltimos, farzandingiz darslardan uzilib qolmasligi uchun to'lovni o'z vaqtida amalga oshiring.`;
 
