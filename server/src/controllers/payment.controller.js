@@ -205,13 +205,23 @@ const paymentController = {
             let messageText = '';
 
             if (type === 'bulk' || type === 'bulk-private') {
-                // Fetch all students with 'debt' status for the current viewed month
+                // Fetch all students with 'debt' status
                 const debtStudents = await prisma.payment.findMany({
                     where: {
                         status: 'debt',
                         ...(month && month !== 'Barchasi' ? { month: month } : {})
                     },
-                    include: { student: { select: { name: true, telegramId: true } } }
+                    include: { 
+                        student: { 
+                            select: { 
+                                name: true, 
+                                telegramId: true,
+                                studentProfile: {
+                                    include: { group: true }
+                                }
+                            } 
+                        } 
+                    }
                 });
 
                 if (debtStudents.length === 0) {
@@ -223,38 +233,30 @@ const paymentController = {
 
                     let totalDebtAmount = 0;
                     debtStudents.forEach((d, idx) => {
-                        messageText += `${idx + 1}. <b>${d.student.name}</b>  -  ${new Intl.NumberFormat('uz-UZ').format(d.amount)} so'm. <i>(${d.month})</i>\n`;
+                        const groupName = d.student.studentProfile?.group?.name || 'Guruhsiz';
+                        messageText += `${idx + 1}. <b>${d.student.name}</b> (${groupName}) - ${new Intl.NumberFormat('uz-UZ').format(d.amount)} so'm. <i>(${d.month})</i>\n`;
                         totalDebtAmount += d.amount;
                     });
 
                     messageText += `\n🔴 Jami kutilayotgan tushum: <b>${new Intl.NumberFormat('uz-UZ').format(totalDebtAmount)} so'm</b>`;
 
-                    // Send to common group
                     const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-                    await axios.post(url, {
-                        chat_id: chatId,
-                        text: messageText,
-                        parse_mode: 'HTML'
-                    });
+                    await axios.post(url, { chat_id: chatId, text: messageText, parse_mode: 'HTML' });
 
                     return res.json({ message: "Barcha qarzdorlar ro'yxati Umumiy guruhga yuborildi!" });
                 }
                 else if (type === 'bulk-private') {
-                    // Send individual messages for each debtor
                     let sentCount = 0;
                     let notFoundCount = 0;
 
                     for (const d of debtStudents) {
-                        const privateMsg = `🔔 <b>TO'LOV ESLATMASI:</b>\n\nHurmatli <b>${d.student.name}</b> ota-onalari, sizning markazimiz oldida <b>${d.amount}</b> so'm qarzdorligingiz mavjud. <i>(Davr: ${d.month})</i>\n\nIltimos, farzandingiz darslardan uzilib qolmasligi uchun to'lovni o'z vaqtida amalga oshiring.`;
+                        const groupName = d.student.studentProfile?.group?.name || '';
+                        const privateMsg = `🔔 <b>TO'LOV ESLATMASI:</b>\n\nHurmatli <b>${d.student.name}</b> ota-onalari, sizning <b>${groupName}</b> kursi uchun <b>${d.amount}</b> so'm qarzdorligingiz mavjud. <i>(Davr: ${d.month})</i>\n\nIltimos, farzandingiz darslardan uzilib qolmasligi uchun to'lovni o'z vaqtida amalga oshiring.`;
 
                         if (d.student.telegramId) {
                             const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
                             try {
-                                await axios.post(url, {
-                                    chat_id: d.student.telegramId,
-                                    text: privateMsg,
-                                    parse_mode: 'HTML'
-                                });
+                                await axios.post(url, { chat_id: d.student.telegramId, text: privateMsg, parse_mode: 'HTML' });
                                 sentCount++;
                             } catch (err) {
                                 console.error(`Telegram jo'natishda xato (${d.student.name}):`, err.message);
@@ -263,17 +265,18 @@ const paymentController = {
                             notFoundCount++;
                         }
                     }
-
-                    if (sentCount === 0 && notFoundCount > 0) {
-                        return res.status(400).json({ message: `Hali hech qaysi o'quvchi botga ulanmagan (${notFoundCount} ta o'quvchiga bormadi). Ular avval botga /start bosib raqamini yuborishi kerak!` });
-                    }
-
-                    return res.json({ message: `${sentCount} ta o'quvchining lichkasiga SMS yuborildi! (${notFoundCount} ta o'quvchi botga ulanmaganligi sababli yuborilmadi).` });
+                    return res.json({ message: `${sentCount} ta o'quvchining lichkasiga SMS yuborildi!` });
                 }
 
             } else {
-                // Single SMS
-                messageText = `🔔 <b>TO'LOV ESLATMASI:</b>\n\nHurmatli <b>${studentName}</b>, sizning o'quv markazimiz oldida <b>${month ? month + ' oyi uchun ' : ''}${amount}</b> so'm qarzdorligingiz mavjud.\nIltimos, darslardan uzilib qolmaslik uchun to'lovni o'z vaqtida amalga oshiring.`;
+                // Single SMS - Find group name for this specific student
+                const student = await prisma.user.findFirst({
+                    where: { name: studentName },
+                    include: { studentProfile: { include: { group: true } } }
+                });
+                const groupName = student?.studentProfile?.group?.name || '';
+
+                messageText = `🔔 <b>TO'LOV ESLATMASI:</b>\n\nHurmatli <b>${studentName}</b>, sizning <b>${groupName}</b> kursi uchun <b>${month ? month + ' oyi uchun ' : ''}${amount}</b> so'm qarzdorligingiz mavjud.\nIltimos, darslardan uzilib qolmaslik uchun to'lovni o'z vaqtida amalga oshiring.`;
 
                 const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
                 await axios.post(url, {
@@ -288,6 +291,7 @@ const paymentController = {
             console.error("Telegram API xatosi:", error);
             res.status(500).json({ message: "SMS yuborishda xatolik yuz berdi" });
         }
+    },
     },
 
     uploadReceipt: async (req, res) => {
