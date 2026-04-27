@@ -117,6 +117,43 @@ const courseController = {
         } catch (error) {
             res.status(500).json({ message: "Xatolik" });
         }
+    },
+
+    getMaterials: async (req, res) => {
+        try {
+            const materials = await prisma.material.findMany({ orderBy: { createdAt: 'desc' } });
+            res.json(materials);
+        } catch (error) {
+            res.status(500).json({ message: "Xatolik" });
+        }
+    },
+
+    uploadMaterial: async (req, res) => {
+        try {
+            const { name, type, courseId, groupId } = req.body;
+            const newMaterial = await prisma.material.create({
+                data: {
+                    name,
+                    type,
+                    courseId: courseId ? parseInt(courseId) : null,
+                    groupId: groupId ? parseInt(groupId) : null,
+                    size: "Noma'lum"
+                }
+            });
+            res.status(201).json(newMaterial);
+        } catch (error) {
+            res.status(500).json({ message: "Xatolik" });
+        }
+    },
+
+    deleteMaterial: async (req, res) => {
+        try {
+            const { id } = req.params;
+            await prisma.material.delete({ where: { id: parseInt(id) } });
+            res.json({ message: "O'chirildi" });
+        } catch (error) {
+            res.status(500).json({ message: "Xatolik" });
+        }
     }
 };
 
