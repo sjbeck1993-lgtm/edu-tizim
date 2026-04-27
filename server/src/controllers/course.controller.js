@@ -108,23 +108,24 @@ const courseController = {
     updateGroup: async (req, res) => {
         try {
             const { id } = req.params;
-            const { name, teacherId, schedule, classDays, classTime, telegramChatId } = req.body;
-
-            const dataToUpdate = { name };
-            if (teacherId !== undefined) dataToUpdate.teacherId = teacherId && teacherId !== "" ? parseInt(teacherId) : null;
-            if (schedule !== undefined) dataToUpdate.schedule = schedule;
-            if (classDays !== undefined) dataToUpdate.classDays = classDays;
-            if (classTime !== undefined) dataToUpdate.classTime = classTime;
-            if (telegramChatId !== undefined) dataToUpdate.telegramChatId = telegramChatId || null;
+            const { name, teacherId, schedule, classDays, classTime, telegramChatId, courseId } = req.body;
 
             const updatedGroup = await prisma.group.update({
                 where: { id: parseInt(id) },
-                data: dataToUpdate
+                data: {
+                    name: name,
+                    courseId: courseId ? parseInt(courseId) : undefined,
+                    teacherId: teacherId && teacherId !== "" ? parseInt(teacherId) : null,
+                    schedule: schedule,
+                    classDays: classDays,
+                    classTime: classTime,
+                    telegramChatId: telegramChatId || null
+                }
             });
             res.json({ message: "Guruh ma'lumotlari yangilandi!", group: updatedGroup });
         } catch (error) {
-            console.error(error);
-            res.status(500).json({ message: "Tahrirlashda xatolik yuz berdi" });
+            console.error('❌ GROUP UPDATE ERROR:', error);
+            res.status(500).json({ message: "Tahrirlashda xatolik yuz berdi: " + error.message });
         }
     },
 

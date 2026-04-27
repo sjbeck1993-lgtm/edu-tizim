@@ -188,7 +188,7 @@ const Courses = () => {
             id: group.id,
             courseId: courseId,
             name: group.name,
-            teacherId: group.teacherId,
+            teacherId: group.teacherId || '',
             schedule: group.schedule,
             classDays: group.classDays || [],
             classTime: group.classTime || '',
