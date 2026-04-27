@@ -21,30 +21,23 @@ const courseController = {
             res.json(courses);
         } catch (error) {
             console.error('❌ GET ALL COURSES ERROR:', error);
-            res.status(500).json({ message: "Kurslarni yuklashda xatolik yuz berdi: " + error.message });
+            res.status(500).json({ message: "Kurslarni yuklashda xatolik" });
         }
     },
 
     createCourse: async (req, res) => {
         try {
-            console.log('--- NEW COURSE REQUEST ---', req.body);
             const { name, monthlyPrice, description } = req.body;
-            
-            if (!name) {
-                return res.status(400).json({ message: "Kurs nomi majburiy!" });
-            }
-
             const newCourse = await prisma.course.create({
                 data: {
                     name,
-                    monthlyPrice: monthlyPrice ? parseFloat(monthlyPrice) : 0,
+                    monthlyPrice: parseFloat(monthlyPrice) || 0,
                     description: description || ""
                 }
             });
-            res.status(201).json({ message: "Kurs muvaffaqiyatli yaratildi", course: newCourse });
+            res.status(201).json(newCourse);
         } catch (error) {
-            console.error('❌ COURSE CREATE ERROR:', error);
-            res.status(500).json({ message: "Kurs qo'shishda xatolik yuz berdi: " + error.message });
+            res.status(500).json({ message: "Xatolik" });
         }
     },
 
@@ -54,16 +47,11 @@ const courseController = {
             const { name, monthlyPrice, description } = req.body;
             const updated = await prisma.course.update({
                 where: { id: parseInt(id) },
-                data: {
-                    name,
-                    monthlyPrice: monthlyPrice ? parseFloat(monthlyPrice) : undefined,
-                    description
-                }
+                data: { name, monthlyPrice: parseFloat(monthlyPrice), description }
             });
             res.json(updated);
         } catch (error) {
-            console.error(error);
-            res.status(500).json({ message: "Kursni tahrirlashda xatolik" });
+            res.status(500).json({ message: "Xatolik" });
         }
     },
 
@@ -71,37 +59,30 @@ const courseController = {
         try {
             const { id } = req.params;
             await prisma.course.delete({ where: { id: parseInt(id) } });
-            res.json({ message: "Kurs o'chirildi" });
+            res.json({ message: "O'chirildi" });
         } catch (error) {
-            console.error(error);
-            res.status(500).json({ message: "O'chirishda xato" });
+            res.status(500).json({ message: "Xatolik" });
         }
     },
 
     createGroup: async (req, res) => {
         try {
-            console.log('--- NEW GROUP REQUEST ---', req.body);
             const { courseId, name, teacherId, schedule, classDays, classTime, telegramChatId } = req.body;
-            
-            if (!courseId || !name) {
-                return res.status(400).json({ message: "Kurs va guruh nomi majburiy!" });
-            }
-
             const newGroup = await prisma.group.create({
                 data: {
-                    courseId: parseInt(courseId),
                     name,
-                    teacherId: teacherId && teacherId !== "" ? parseInt(teacherId) : null,
-                    schedule: schedule || "Belgilanmagan",
+                    courseId: parseInt(courseId),
+                    teacherId: teacherId ? parseInt(teacherId) : null,
+                    schedule: schedule || "",
                     classDays: classDays || [],
-                    classTime: classTime || null,
+                    classTime: classTime || "",
                     telegramChatId: telegramChatId || null
                 }
             });
-            res.status(201).json({ message: "Yangi guruh ochildi", group: newGroup });
+            res.status(201).json(newGroup);
         } catch (error) {
-            console.error('❌ GROUP CREATE ERROR:', error);
-            res.status(500).json({ message: "Guruh qo'shishda xato yuz berdi: " + error.message });
+            console.error('Create Group Error:', error);
+            res.status(500).json({ message: "Guruh yaratishda xato: " + error.message });
         }
     },
 
@@ -109,23 +90,22 @@ const courseController = {
         try {
             const { id } = req.params;
             const { name, teacherId, schedule, classDays, classTime, telegramChatId, courseId } = req.body;
-
-            const updatedGroup = await prisma.group.update({
+            const updated = await prisma.group.update({
                 where: { id: parseInt(id) },
                 data: {
-                    name: name,
-                    courseId: courseId ? parseInt(courseId) : undefined,
-                    teacherId: teacherId && teacherId !== "" ? parseInt(teacherId) : null,
-                    schedule: schedule,
-                    classDays: classDays,
-                    classTime: classTime,
-                    telegramChatId: telegramChatId || null
+                    name,
+                    teacherId: teacherId ? parseInt(teacherId) : null,
+                    schedule,
+                    classDays,
+                    classTime,
+                    telegramChatId: telegramChatId || null,
+                    courseId: courseId ? parseInt(courseId) : undefined
                 }
             });
-            res.json({ message: "Guruh ma'lumotlari yangilandi!", group: updatedGroup });
+            res.json(updated);
         } catch (error) {
-            console.error('❌ GROUP UPDATE ERROR:', error);
-            res.status(500).json({ message: "Tahrirlashda xatolik yuz berdi: " + error.message });
+            console.error('Update Group Error:', error);
+            res.status(500).json({ message: "Guruhni tahrirlashda xato" });
         }
     },
 
@@ -133,10 +113,9 @@ const courseController = {
         try {
             const { id } = req.params;
             await prisma.group.delete({ where: { id: parseInt(id) } });
-            res.json({ message: "Guruh o'chirildi" });
+            res.json({ message: "O'chirildi" });
         } catch (error) {
-            console.error(error);
-            res.status(500).json({ message: "O'chirishda xato" });
+            res.status(500).json({ message: "Xatolik" });
         }
     }
 };
