@@ -229,21 +229,41 @@ const paymentController = {
                 }
 
                 if (type === 'bulk') {
-                    messageText = `⚠️ <b>OMMAVIY TO'LOV ESLATMASI!</b>\n\nQuyidagi o'quvchilarimizdan o'quv markazi to'lovini tezroq amalga oshirishlarini so'raymiz:\n\n`;
-
-                    let totalDebtAmount = 0;
-                    debtStudents.forEach((d, idx) => {
-                        const groupName = d.student.studentProfile?.group?.name || 'Guruhsiz';
-                        messageText += `${idx + 1}. <b>${d.student.name}</b> (${groupName}) - ${new Intl.NumberFormat('uz-UZ').format(d.amount)} so'm. <i>(${d.month})</i>\n`;
-                        totalDebtAmount += d.amount;
+                    // Group students by their telegramChatId
+                    const groupedDebts = {};
+                    
+                    debtStudents.forEach(d => {
+                        const targetId = d.student.studentProfile?.group?.telegramChatId || chatId;
+                        if (!groupedDebts[targetId]) {
+                            groupedDebts[targetId] = {
+                                groupName: d.student.studentProfile?.group?.name || 'Umumiy',
+                                students: []
+                            };
+                        }
+                        groupedDebts[targetId].students.push(d);
                     });
 
-                    messageText += `\n🔴 Jami kutilayotgan tushum: <b>${new Intl.NumberFormat('uz-UZ').format(totalDebtAmount)} so'm</b>`;
+                    // Send separate message to each group
+                    for (const [targetChatId, data] of Object.entries(groupedDebts)) {
+                        let groupMsg = `⚠️ <b>${data.groupName.toUpperCase()} GURUHI: TO'LOV ESLATMASI!</b>\n\n`;
+                        let totalDebt = 0;
 
-                    const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-                    await axios.post(url, { chat_id: chatId, text: messageText, parse_mode: 'HTML' });
+                        data.students.forEach((d, idx) => {
+                            groupMsg += `${idx + 1}. <b>${d.student.name}</b> - ${new Intl.NumberFormat('uz-UZ').format(d.amount)} so'm. <i>(${d.month})</i>\n`;
+                            totalDebt += d.amount;
+                        });
 
-                    return res.json({ message: "Barcha qarzdorlar ro'yxati Umumiy guruhga yuborildi!" });
+                        groupMsg += `\n🔴 Jami kutilayotgan tushum: <b>${new Intl.NumberFormat('uz-UZ').format(totalDebt)} so'm</b>`;
+
+                        const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+                        try {
+                            await axios.post(url, { chat_id: targetChatId, text: groupMsg, parse_mode: 'HTML' });
+                        } catch (err) {
+                            console.error(`Guruhga (${data.groupName}) yuborishda xato:`, err.message);
+                        }
+                    }
+
+                    return res.json({ message: "Qarzdorlar ro'yxati tegishli guruhlarga yuborildi!" });
                 }
                     for (const d of debtStudents) {
                         const groupName = d.student.studentProfile?.group?.name || '';
