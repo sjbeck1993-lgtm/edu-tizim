@@ -1,418 +1,144 @@
 const { PrismaClient } = require('@prisma/client');
-const axios = require('axios');
 const prisma = new PrismaClient();
+const axios = require('axios');
 
 const paymentController = {
-    getStudents: async (req, res) => {
-        try {
-            const students = await prisma.user.findMany({
-                where: { role: 'STUDENT' },
-                select: { id: true, name: true }
-            });
-            res.json(students);
-        } catch (error) {
-            console.error(error);
-            res.status(500).json({ message: "O'quvchilarni yuklashda xato" });
-        }
-    },
-
     getAllPayments: async (req, res) => {
         try {
             const payments = await prisma.payment.findMany({
-                orderBy: { paymentDate: 'desc' },
                 include: {
-                    student: {
-                        select: {
-                            name: true,
-                            phone: true,
-                            studentProfile: {
-                                include: {
-                                    group: {
-                                        select: { name: true }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                    student: { select: { name: true, phone: true } }
+                },
+                orderBy: { createdAt: 'desc' }
             });
             res.json(payments);
         } catch (error) {
-            console.error(error);
-            res.status(500).json({ message: "To'lovlarni yuklashda xatolik yuz berdi" });
+            res.status(500).json({ message: "To'lovlarni yuklashda xato" });
         }
     },
 
     createPayment: async (req, res) => {
         try {
-            const { studentId, amount, month, method, status } = req.body;
-            const finalStatus = status === 'debt' ? 'debt' : 'paid';
-
-            let baseDate = new Date();
-            const parsedDate = new Date(month);
-            let finalMonthStr = month;
-            let finalPeriodStart = null;
-
-            if (!isNaN(parsedDate.getTime()) && String(month).includes('-')) {
-                const monthsName = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
-                finalMonthStr = monthsName[parsedDate.getMonth()];
-                finalPeriodStart = parsedDate;
-                baseDate = parsedDate; // If a specific date is chosen, start calculation from there
-            }
-
-            // Agar to'lov qilayotgan bo'lsa, shu oydagi qarzni o'chirib yuboramiz
-            if (finalStatus === 'paid') {
-                await prisma.payment.deleteMany({
-                    where: {
-                        studentId: parseInt(studentId),
-                        month: finalMonthStr,
-                        status: 'debt'
-                    }
-                });
-            }
-
+            const { studentId, amount, type, description, date } = req.body;
             const newPayment = await prisma.payment.create({
                 data: {
                     studentId: parseInt(studentId),
                     amount: parseFloat(amount),
-                    month: finalMonthStr,
-                    periodStart: finalPeriodStart,
-                    method: finalStatus === 'debt' ? '-' : method, // qarz bo'lsa metod yoq
-                    status: finalStatus
-                },
-                include: { student: { select: { name: true } } }
+                    type,
+                    description,
+                    date: date ? new Date(date) : new Date()
+                }
             });
 
-            if (finalStatus === 'paid' && parseFloat(amount) >= 300000) {
-                const profile = await prisma.studentProfile.findUnique({ where: { userId: parseInt(studentId) } });
-                if (profile) {
-                    // If finalPeriodStart was provided, baseDate is already set to it.
-                    // Otherwise, use existing logic for subEndsAt/joinedAt.
-                    if (!finalPeriodStart) {
-                        if (profile.subEndsAt && new Date(profile.subEndsAt) > baseDate) {
-                            baseDate = new Date(profile.subEndsAt);
-                        } else if (profile.joinedAt && new Date(profile.joinedAt) > baseDate) {
-                            baseDate = new Date(profile.joinedAt);
-                        }
-                    }
+            // Update student balance
+            await prisma.studentProfile.update({
+                where: { userId: parseInt(studentId) },
+                data: { balance: { increment: parseFloat(amount) } }
+            });
 
-                    const newEndDate = new Date(baseDate);
-                    newEndDate.setDate(newEndDate.getDate() + 45);
-
-                    await prisma.studentProfile.update({
-                        where: { userId: parseInt(studentId) },
-                        data: { subEndsAt: newEndDate }
-                    });
-                }
-            }
-
-            const msg = finalStatus === 'debt' ? "Qarzdorlik yozildi!" : "To'lov muvaffaqiyatli qabul qilindi!";
-            res.status(201).json({ message: msg, payment: newPayment });
+            res.status(201).json(newPayment);
         } catch (error) {
             console.error(error);
-            res.status(500).json({ message: "Amallarni bajarishda xatolik yuz berdi" });
+            res.status(500).json({ message: "To'lovni saqlashda xato" });
         }
     },
 
-    autoGenerateDebts: async (req, res) => {
+    getDebts: async (req, res) => {
         try {
-            const { month } = req.body; // e.g. "Mart"
-
-            // 1. Get all active students who are in a group (so they have a course price)
-            const activeStudents = await prisma.user.findMany({
-                where: { role: 'STUDENT' },
+            const debts = await prisma.debt.findMany({
+                where: { status: 'UNPAID' },
                 include: {
-                    studentProfile: {
-                        include: {
-                            group: {
-                                include: { course: true }
+                    student: {
+                        select: {
+                            id: true,
+                            name: true,
+                            phone: true,
+                            telegramId: true,
+                            studentProfile: {
+                                include: { group: true }
                             }
                         }
                     }
-                }
+                },
+                orderBy: { month: 'desc' }
             });
-
-            const studentsWithGroups = activeStudents.filter(s => {
-                const profile = s.studentProfile;
-                if (!profile?.group) return false;
-                // A student is considered for debt if they have no subEndsAt (never paid)
-                // or if their subEndsAt date has passed (expired 45-day renewal)
-                if (!profile.subEndsAt) return true;
-                return new Date(profile.subEndsAt) < new Date();
-            });
-
-            if (studentsWithGroups.length === 0) {
-                return res.status(400).json({ message: "Guruhga biriktirilgan qarzdor o'quvchilar topilmadi" });
-            }
-
-            let newDebtsCount = 0;
-
-            for (const student of studentsWithGroups) {
-                const existingPaymentOrDebt = await prisma.payment.findFirst({
-                    where: {
-                        studentId: student.id,
-                        month: month
-                    }
-                });
-
-                if (!existingPaymentOrDebt) {
-                    const debtAmount = student.studentProfile.group.course.monthlyPrice;
-                    await prisma.payment.create({
-                        data: {
-                            studentId: student.id,
-                            amount: debtAmount,
-                            month: month,
-                            periodStart: new Date(),
-                            method: '-',
-                            status: 'debt'
-                        }
-                    });
-                    newDebtsCount++;
-                }
-            }
-
-            res.json({ message: `${month} oyi uchun ${newDebtsCount} ta yangi qarzdorlik yozildi!` });
+            res.json(debts);
         } catch (error) {
-            console.error(error);
-            res.status(500).json({ message: "Avtomatik qarz hisoblashda xatolik yuz berdi" });
-        }
-    },
-
-    deletePayment: async (req, res) => {
-        try {
-            const { id } = req.params;
-            await prisma.payment.delete({
-                where: { id: parseInt(id) }
-            });
-            res.json({ message: "To'lov o'chirildi" });
-        } catch (error) {
-            console.error(error);
-            res.status(500).json({ message: "To'lovni o'chirishda xatolik yuz berdi" });
+            res.status(500).json({ message: "Qarzdorlarni yuklashda xato" });
         }
     },
 
     sendSMS: async (req, res) => {
         try {
-            const { type, studentName, month, amount } = req.body;
+            const { type, studentName, amount, month } = req.body;
             const botToken = process.env.TELEGRAM_BOT_TOKEN;
-            const chatId = process.env.TELEGRAM_CHAT_ID;
-
-            if (!botToken || !chatId) {
-                console.log("Telegram API kalitlari (Token yoki Chat ID) sozlanmagan.");
-                return res.status(200).json({ message: "Sms tizimi hozircha Simulyatsiyada ishladi (Bot ulanmagan yoki Chat ID yo'q)" });
-            }
-
-            let messageText = '';
+            const globalChatId = process.env.TELEGRAM_CHAT_ID;
 
             if (type === 'bulk' || type === 'bulk-private') {
-                // Fetch all students with 'debt' status
-                const debtStudents = await prisma.payment.findMany({
-                    where: {
-                        status: 'debt',
-                        ...(month && month !== 'Barchasi' ? { month: month } : {})
-                    },
-                    include: { 
-                        student: { 
-                            select: { 
-                                name: true, 
-                                telegramId: true,
-                                studentProfile: {
-                                    include: { group: true }
-                                }
-                            } 
-                        } 
+                const debtStudents = await prisma.debt.findMany({
+                    where: { status: 'UNPAID' },
+                    include: {
+                        student: {
+                            include: {
+                                studentProfile: { include: { group: true } }
+                            }
+                        }
                     }
                 });
 
-                if (debtStudents.length === 0) {
-                    return res.status(400).json({ message: "Sms yuborish uchun qarzdorlar topilmadi!" });
-                }
-
                 if (type === 'bulk') {
-                    // Group students by their telegramChatId
                     const groupedDebts = {};
-                    
                     debtStudents.forEach(d => {
-                        const targetId = d.student.studentProfile?.group?.telegramChatId || chatId;
-                        if (!groupedDebts[targetId]) {
-                            groupedDebts[targetId] = {
-                                groupName: d.student.studentProfile?.group?.name || 'Umumiy',
-                                students: []
-                            };
+                        const targetId = d.student.studentProfile?.group?.telegramChatId;
+                        if (targetId) {
+                            if (!groupedDebts[targetId]) {
+                                groupedDebts[targetId] = { name: d.student.studentProfile.group.name, students: [] };
+                            }
+                            groupedDebts[targetId].students.push(d);
                         }
-                        groupedDebts[targetId].students.push(d);
                     });
 
-                    // Send separate message to each group
-                    for (const [targetChatId, data] of Object.entries(groupedDebts)) {
-                        // AGAR targetChatId umumiy chatId ga teng bo'lsa va bu guruh nomi 'Umumiy' bo'lsa, uni o'tkazib yuboramiz
-                        if (targetChatId === chatId) {
-                            console.log(`Skipping general group notification for ${data.students.length} students.`);
-                            continue; 
-                        }
-
-                        let groupMsg = `⚠️ <b>${data.groupName.toUpperCase()} GURUHI: TO'LOV ESLATMASI!</b>\n\n`;
-                        let totalDebt = 0;
-
-                        data.students.forEach((d, idx) => {
-                            groupMsg += `${idx + 1}. <b>${d.student.name}</b> - ${new Intl.NumberFormat('uz-UZ').format(d.amount)} so'm. <i>(${d.month})</i>\n`;
-                            totalDebt += d.amount;
+                    for (const [chatId, data] of Object.entries(groupedDebts)) {
+                        let msg = `⚠️ <b>${data.name.toUpperCase()} GURUHI: QARZDORLIK!</b>\n\n`;
+                        let total = 0;
+                        data.students.forEach((s, idx) => {
+                            msg += `${idx + 1}. <b>${s.student.name}</b> - ${s.amount} so'm. <i>(${s.month})</i>\n`;
+                            total += s.amount;
                         });
-
-                        groupMsg += `\n🔴 Jami kutilayotgan tushum: <b>${new Intl.NumberFormat('uz-UZ').format(totalDebt)} so'm</b>`;
-
-                        const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-                        try {
-                            await axios.post(url, { chat_id: targetChatId, text: groupMsg, parse_mode: 'HTML' });
-                        } catch (err) {
-                            console.error(`Guruhga (${data.groupName}) yuborishda xato:`, err.message);
-                        }
+                        msg += `\n🔴 Jami: <b>${total} so'm</b>`;
+                        await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, { chat_id: chatId, text: msg, parse_mode: 'HTML' });
                     }
-
-                    return res.json({ message: "Xabarlar faqat sozlangan guruhlarga yuborildi!" });
-                }
+                    return res.json({ message: "Guruhlarga xabarlar yuborildi!" });
+                } 
+                
+                if (type === 'bulk-private') {
+                    let sent = 0;
                     for (const d of debtStudents) {
-                        const groupName = d.student.studentProfile?.group?.name || '';
-                        const groupChatId = d.student.studentProfile?.group?.telegramChatId;
-
-                        if (!groupChatId) continue;
-
-                        const privateMsg = `🔔 <b>TO'LOV ESLATMASI:</b>\n\nHurmatli <b>${d.student.name}</b> ota-onalari, sizning <b>${groupName}</b> kursi uchun <b>${d.amount}</b> so'm qarzdorligingiz mavjud. <i>(Davr: ${d.month})</i>\n\nIltimos, farzandingiz darslardan uzilib qolmasligi uchun to'lovni o'z vaqtida amalga oshiring.`;
-
-                        // Agar lichkaga yuborish bo'lsa
-                        if (type === 'bulk-private') {
-                            if (d.student.telegramId) {
-                                const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-                                try {
-                                    await axios.post(url, { chat_id: d.student.telegramId, text: privateMsg, parse_mode: 'HTML' });
-                                    sentCount++;
-                                } catch (err) {
-                                    console.error(`Telegram jo'natishda xato (${d.student.name}):`, err.message);
-                                }
-                            } else {
-                                notFoundCount++;
-                            }
-                        } else {
-                            // Agar guruhga yuborish bo'lsa
-                            const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-                            try {
-                                await axios.post(url, { chat_id: groupChatId, text: privateMsg, parse_mode: 'HTML' });
-                                sentCount++;
-                            } catch (err) {
-                                console.error(`Guruhga jo'natishda xato (${groupName}):`, err.message);
-                            }
+                        const tid = d.student.telegramId;
+                        if (tid) {
+                            const msg = `🔔 <b>TO'LOV ESLATMASI:</b>\n\nHurmatli <b>${d.student.name}</b>, sizning <b>${d.student.studentProfile?.group?.name}</b> kursi uchun <b>${d.amount}</b> so'm qarzdorligingiz mavjud.`;
+                            await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, { chat_id: tid, text: msg, parse_mode: 'HTML' });
+                            sent++;
                         }
                     }
-                    return res.json({ message: "Xabarlar tegishli guruhlarga yuborildi!" });
+                    return res.json({ message: `${sent} kishiga shaxsiy xabar yuborildi.` });
                 }
-
             } else {
-                // Single SMS - Find group and its specific chatId
+                // Single SMS
                 const student = await prisma.user.findFirst({
                     where: { name: studentName },
                     include: { studentProfile: { include: { group: true } } }
                 });
-                
-                const groupName = student?.studentProfile?.group?.name || '';
-                const targetChatId = student?.studentProfile?.group?.telegramChatId || chatId;
+                const targetChatId = student?.studentProfile?.group?.telegramChatId;
+                if (!targetChatId) return res.status(400).json({ message: "Guruh ID si sozlanmagan!" });
 
-                messageText = `🔔 <b>TO'LOV ESLATMASI:</b>\n\nHurmatli <b>${studentName}</b>, sizning <b>${groupName}</b> kursi uchun <b>${month ? month + ' oyi uchun ' : ''}${amount}</b> so'm qarzdorligingiz mavjud.\nIltimos, darslardan uzilib qolmaslik uchun to'lovni o'z vaqtida amalga oshiring.`;
-
-                const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-                await axios.post(url, {
-                    chat_id: targetChatId,
-                    text: messageText,
-                    parse_mode: 'HTML'
-                });
-
-                return res.json({ message: `${studentName} ga xabar yuborildi!` });
+                const msg = `🔔 <b>TO'LOV ESLATMASI:</b>\n\nHurmatli <b>${studentName}</b>, sizning <b>${student.studentProfile?.group?.name}</b> kursi uchun ${month ? month + ' oyi uchun ' : ''}<b>${amount}</b> so'm qarzdorligingiz mavjud.`;
+                await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, { chat_id: targetChatId, text: msg, parse_mode: 'HTML' });
+                return res.json({ message: "Xabar yuborildi!" });
             }
-        } catch (error) {
-            console.error("Telegram API xatosi:", error);
-            res.status(500).json({ message: "SMS yuborishda xatolik yuz berdi" });
-        }
-    },
-    },
-
-    uploadReceipt: async (req, res) => {
-        try {
-            const studentId = req.user.id;
-            const { amount, month } = req.body;
-
-            if (!req.file) {
-                return res.status(400).json({ message: "Skrinshot yuklanmadi!" });
-            }
-
-            const receiptUrl = `/uploads/${req.file.filename}`;
-
-            const parsedDate = new Date(month);
-            let finalMonthStr = month;
-            let finalPeriodStart = null;
-
-            if (!isNaN(parsedDate.getTime()) && String(month).includes('-')) {
-                const monthsName = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
-                finalMonthStr = monthsName[parsedDate.getMonth()];
-                finalPeriodStart = parsedDate;
-            }
-
-            const newPayment = await prisma.payment.create({
-                data: {
-                    studentId: parseInt(studentId),
-                    amount: parseFloat(amount),
-                    month: finalMonthStr,
-                    periodStart: finalPeriodStart,
-                    method: 'Karta',
-                    status: 'pending',
-                    receiptUrl: receiptUrl
-                }
-            });
-
-            res.status(201).json({ message: "To'lov tekshirish uchun yuborildi!", payment: newPayment });
         } catch (error) {
             console.error(error);
-            res.status(500).json({ message: "To'lovni yuklashda xato yuz berdi" });
-        }
-    },
-
-    approvePayment: async (req, res) => {
-        try {
-            const { id } = req.params;
-            const payment = await prisma.payment.findUnique({ where: { id: parseInt(id) } });
-            if (!payment) return res.status(404).json({ message: "To'lov topilmadi" });
-
-            const updatedPayment = await prisma.payment.update({
-                where: { id: parseInt(id) },
-                data: { status: 'paid' }
-            });
-
-            if (payment.amount >= 300000) {
-                const profile = await prisma.studentProfile.findUnique({ where: { userId: payment.studentId } });
-                if (profile) {
-                    let baseDate = new Date();
-
-                    // If payment has a specific periodStart date, use it as the base
-                    if (payment.periodStart) {
-                        baseDate = new Date(payment.periodStart);
-                    } else if (profile.subEndsAt && new Date(profile.subEndsAt) > baseDate) {
-                        baseDate = new Date(profile.subEndsAt);
-                    } else if (profile.joinedAt && new Date(profile.joinedAt) > baseDate) {
-                        baseDate = new Date(profile.joinedAt);
-                    }
-
-                    const newEndDate = new Date(baseDate);
-                    newEndDate.setDate(newEndDate.getDate() + 45);
-
-                    await prisma.studentProfile.update({
-                        where: { userId: payment.studentId },
-                        data: { subEndsAt: newEndDate }
-                    });
-                }
-            }
-
-            res.json({ message: "To'lov tasdiqlandi!", payment: updatedPayment });
-        } catch (error) {
-            console.error(error);
-            res.status(500).json({ message: "Tasdiqlashda xato yuz berdi" });
+            res.status(500).json({ message: "Telegram xatosi" });
         }
     }
 };

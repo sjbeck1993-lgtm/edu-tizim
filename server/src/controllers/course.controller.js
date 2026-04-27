@@ -10,14 +10,16 @@ const courseController = {
                         include: {
                             students: {
                                 include: {
-                                    user: { select: { name: true, phone: true } }
+                                    user: { select: { id: true, name: true, phone: true } }
                                 }
                             },
-                            teacher: { select: { name: true } }
+                            teacher: { select: { id: true, name: true } }
                         }
                     }
                 }
             });
+            // Tekshirish uchun log
+            console.log('Kurslar yuklandi, birinchi guruh IDsi:', courses[0]?.groups[0]?.telegramChatId);
             res.json(courses);
         } catch (error) {
             console.error('❌ GET ALL COURSES ERROR:', error);
