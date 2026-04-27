@@ -595,6 +595,7 @@ const Courses = () => {
                                             <div className="text-sm text-gray-600 dark:text-gray-300 space-y-1">
                                                 <p><span className="font-medium">O'qituvchi:</span> {g.teacher?.name || 'Biriktirilmagan'}</p>
                                                 <p><span className="font-medium">Jadval:</span> {g.schedule}</p>
+                                                <p><span className="font-medium">Telegram Chat ID:</span> <code className="bg-gray-200 dark:bg-gray-700 px-1 rounded">{g.telegramChatId || 'Kiritilmagan'}</code></p>
                                             </div>
                                             {g.students && g.students.length > 0 && (
                                                 <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
