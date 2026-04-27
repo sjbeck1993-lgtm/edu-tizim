@@ -28,7 +28,7 @@ const Courses = () => {
 
     // Form state
     const [formData, setFormData] = useState({ name: '', monthlyPrice: '' });
-    const [groupData, setGroupData] = useState({ id: null, courseId: '', name: '', teacherId: '', schedule: '', classDays: [], classTime: '' });
+    const [groupData, setGroupData] = useState({ id: null, courseId: '', name: '', teacherId: '', schedule: '', classDays: [], classTime: '', telegramChatId: '' });
     const [materialData, setMaterialData] = useState({ name: '', type: 'document', courseId: '' });
 
     const WEEK_DAYS = [
@@ -162,20 +162,18 @@ const Courses = () => {
     const handleAddGroup = async (e) => {
         e.preventDefault();
         try {
-            if (isEditGroupMode) {
-                const payload = { ...groupData, schedule: buildScheduleString(groupData.classDays, groupData.classTime) };
+            const payload = { ...groupData, schedule: buildScheduleString(groupData.classDays, groupData.classTime) };
+            if (groupData.id) {
                 await axiosClient.put(`/courses/groups/${groupData.id}`, payload);
-                toast.success("Guruh yangilandi!");
+                toast.success("Guruh tahrirlandi!", { icon: '📝' });
             } else {
-                const payload = { ...groupData, schedule: buildScheduleString(groupData.classDays, groupData.classTime) };
                 await axiosClient.post('/courses/groups', payload);
-                toast.success("Yangi guruh ochildi!");
+                toast.success("Yangi guruh ochildi!", { icon: '🎊' });
             }
-
             setIsGroupModalOpen(false);
-            setIsEditGroupMode(false);
-            setGroupData(prev => ({ ...prev, id: null, name: '', schedule: '', classDays: [], classTime: '' }));
+            setGroupData({ id: null, courseId: courses[0]?.id || '', name: '', teacherId: teachers[0]?.id || '', schedule: '', classDays: [], classTime: '', telegramChatId: '' });
             fetchCourses();
+            if (isGroupDetailsModalOpen) setIsGroupDetailsModalOpen(false);
 
             // Agar guruhlar ro'yxati ochilgan bo'lsa, o'zgarish sezilishi uchun yopamiz
             if (isGroupDetailsModalOpen) setIsGroupDetailsModalOpen(false);
@@ -190,10 +188,11 @@ const Courses = () => {
             id: group.id,
             courseId: courseId,
             name: group.name,
-            teacherId: group.teacherId || (teachers.length > 0 ? teachers[0].id : ''),
+            teacherId: group.teacherId,
             schedule: group.schedule,
             classDays: group.classDays || [],
-            classTime: group.classTime || ''
+            classTime: group.classTime || '',
+            telegramChatId: group.telegramChatId || ''
         });
         setIsEditGroupMode(true);
         setIsGroupModalOpen(true);
@@ -480,14 +479,27 @@ const Courses = () => {
                                         </button>
                                     ))}
                                 </div>
-                                <label className="label">Dars Vaqti</label>
-                                <input
-                                    type="time"
-                                    className="input-field"
-                                    value={groupData.classTime || ''}
-                                    onChange={(e) => setGroupData({ ...groupData, classTime: e.target.value })}
-                                />
-                                <p className="text-xs text-gray-500 mt-2 text-right">Preview: <span className="font-semibold text-gray-700">{buildScheduleString(groupData.classDays, groupData.classTime)}</span></p>
+                                <div className="form-group">
+                            <label>Dars vaqti</label>
+                            <input
+                                type="time"
+                                className="form-input"
+                                value={groupData.classTime}
+                                onChange={(e) => setGroupData({ ...groupData, classTime: e.target.value })}
+                            />
+                        </div>
+
+                        <div className="form-group">
+                            <label>Telegram Chat ID (Guruh kodi)</label>
+                            <input
+                                type="text"
+                                className="form-input"
+                                placeholder="-100..."
+                                value={groupData.telegramChatId || ''}
+                                onChange={(e) => setGroupData({ ...groupData, telegramChatId: e.target.value })}
+                            />
+                            <small style={{color: '#666'}}>* Ushbu guruh uchun maxsus Telegram guruh ID sini kiriting. Bo'sh qolsa umumiyga yuboriladi.</small>
+                        </div>        <p className="text-xs text-gray-500 mt-2 text-right">Preview: <span className="font-semibold text-gray-700">{buildScheduleString(groupData.classDays, groupData.classTime)}</span></p>
                             </div>
                             <div className="flex gap-2 justify-end mt-4">
                                 <button type="button" className="btn btn-outline" onClick={() => { setIsGroupModalOpen(false); setIsEditGroupMode(false); }}>Bekor qilish</button>

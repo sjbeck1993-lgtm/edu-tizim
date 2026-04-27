@@ -66,18 +66,19 @@ model Course {
 }
 
 model Group {
-  id          Int              @id @default(autoincrement())
-  name        String
-  courseId    Int
-  teacherId   Int
-  schedule    String           
-  classDays   Int[]            // 1=Dush, 2=Sesh, 3=Chor, 4=Pay, 5=Jum, 6=Shan, 0=Yak
-  classTime   String?          // 14:00
-  attendances Attendance[]
-  course      Course           @relation(fields: [courseId], references: [id])
-  teacher     User             @relation("TeacherGroups", fields: [teacherId], references: [id])
-  students    StudentProfile[]
-  tasks       Task[]
+  id              Int              @id @default(autoincrement())
+  name            String
+  courseId        Int
+  teacherId       Int
+  schedule        String           
+  classDays       Int[]            // 1=Dush, 2=Sesh, 3=Chor, 4=Pay, 5=Jum, 6=Shan, 0=Yak
+  classTime       String?          // 14:00
+  telegramChatId  String?          // Guruhga xos Telegram Chat ID
+  attendances     Attendance[]
+  course          Course           @relation(fields: [courseId], references: [id])
+  teacher         User             @relation("TeacherGroups", fields: [teacherId], references: [id])
+  students        StudentProfile[]
+  tasks           Task[]
 }
 
 model Payment {

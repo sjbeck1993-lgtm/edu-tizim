@@ -245,47 +245,59 @@ const paymentController = {
 
                     return res.json({ message: "Barcha qarzdorlar ro'yxati Umumiy guruhga yuborildi!" });
                 }
-                else if (type === 'bulk-private') {
-                    let sentCount = 0;
-                    let notFoundCount = 0;
-
                     for (const d of debtStudents) {
                         const groupName = d.student.studentProfile?.group?.name || '';
+                        const groupChatId = d.student.studentProfile?.group?.telegramChatId || chatId; // Agar guruh ID bo'lmasa, umumiyga
+
                         const privateMsg = `🔔 <b>TO'LOV ESLATMASI:</b>\n\nHurmatli <b>${d.student.name}</b> ota-onalari, sizning <b>${groupName}</b> kursi uchun <b>${d.amount}</b> so'm qarzdorligingiz mavjud. <i>(Davr: ${d.month})</i>\n\nIltimos, farzandingiz darslardan uzilib qolmasligi uchun to'lovni o'z vaqtida amalga oshiring.`;
 
-                        if (d.student.telegramId) {
-                            const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-                            try {
-                                await axios.post(url, { chat_id: d.student.telegramId, text: privateMsg, parse_mode: 'HTML' });
-                                sentCount++;
-                            } catch (err) {
-                                console.error(`Telegram jo'natishda xato (${d.student.name}):`, err.message);
+                        // Agar lichkaga yuborish bo'lsa
+                        if (type === 'bulk-private') {
+                            if (d.student.telegramId) {
+                                const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+                                try {
+                                    await axios.post(url, { chat_id: d.student.telegramId, text: privateMsg, parse_mode: 'HTML' });
+                                    sentCount++;
+                                } catch (err) {
+                                    console.error(`Telegram jo'natishda xato (${d.student.name}):`, err.message);
+                                }
+                            } else {
+                                notFoundCount++;
                             }
                         } else {
-                            notFoundCount++;
+                            // Agar guruhga yuborish bo'lsa
+                            const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+                            try {
+                                await axios.post(url, { chat_id: groupChatId, text: privateMsg, parse_mode: 'HTML' });
+                                sentCount++;
+                            } catch (err) {
+                                console.error(`Guruhga jo'natishda xato (${groupName}):`, err.message);
+                            }
                         }
                     }
-                    return res.json({ message: `${sentCount} ta o'quvchining lichkasiga SMS yuborildi!` });
+                    return res.json({ message: "Xabarlar tegishli guruhlarga yuborildi!" });
                 }
 
             } else {
-                // Single SMS - Find group name for this specific student
+                // Single SMS - Find group and its specific chatId
                 const student = await prisma.user.findFirst({
                     where: { name: studentName },
                     include: { studentProfile: { include: { group: true } } }
                 });
+                
                 const groupName = student?.studentProfile?.group?.name || '';
+                const targetChatId = student?.studentProfile?.group?.telegramChatId || chatId;
 
                 messageText = `🔔 <b>TO'LOV ESLATMASI:</b>\n\nHurmatli <b>${studentName}</b>, sizning <b>${groupName}</b> kursi uchun <b>${month ? month + ' oyi uchun ' : ''}${amount}</b> so'm qarzdorligingiz mavjud.\nIltimos, darslardan uzilib qolmaslik uchun to'lovni o'z vaqtida amalga oshiring.`;
 
                 const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
                 await axios.post(url, {
-                    chat_id: chatId,
+                    chat_id: targetChatId,
                     text: messageText,
                     parse_mode: 'HTML'
                 });
 
-                return res.json({ message: `${studentName} ga Telegram orqali xabar yuborildi!` });
+                return res.json({ message: `${studentName} ga xabar yuborildi!` });
             }
         } catch (error) {
             console.error("Telegram API xatosi:", error);
