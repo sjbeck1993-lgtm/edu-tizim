@@ -19,19 +19,21 @@ model User {
   attendances    Attendance[]
   groupsTaught   Group[]         @relation("TeacherGroups")
   payments       Payment[]
+  debts          Debt[]
   studentProfile StudentProfile?
   teacherProfile TeacherProfile?
   submissions    Submission[]
 }
 
 model TeacherProfile {
-  id         Int    @id @default(autoincrement())
-  userId     Int    @unique
-  subject    String
-  baseSalary Float
-  rating     Float  @default(0)
-  bonus      Float  @default(0)
-  user       User   @relation(fields: [userId], references: [id])
+  id                Int    @id @default(autoincrement())
+  userId            Int    @unique
+  subject           String
+  baseSalary        Float
+  paymentPercentage Float  @default(0)
+  rating            Float  @default(0)
+  bonus             Float  @default(0)
+  user              User   @relation(fields: [userId], references: [id])
 }
 
 model StudentProfile {
@@ -39,10 +41,9 @@ model StudentProfile {
   userId    Int      @unique
   level     Int      @default(1)
   coins     Int      @default(0)
-  groupId   Int?
   joinedAt  DateTime @default(now())
   subEndsAt DateTime?
-  group     Group?   @relation(fields: [groupId], references: [id])
+  groups    Group[]
   user      User     @relation(fields: [userId], references: [id])
 }
 
@@ -71,10 +72,12 @@ model Group {
   courseId        Int
   teacherId       Int
   schedule        String           
-  classDays       Int[]            // 1=Dush, 2=Sesh, 3=Chor, 4=Pay, 5=Jum, 6=Shan, 0=Yak
-  classTime       String?          // 14:00
-  telegramChatId  String?          // Guruhga xos Telegram Chat ID
+  classDays       Int[]            
+  classTime       String?          
+  telegramChatId  String?          
   attendances     Attendance[]
+  debts           Debt[]
+  payments        Payment[]
   course          Course           @relation(fields: [courseId], references: [id])
   teacher         User             @relation("TeacherGroups", fields: [teacherId], references: [id])
   students        StudentProfile[]
@@ -84,6 +87,7 @@ model Group {
 model Payment {
   id          Int      @id @default(autoincrement())
   studentId   Int
+  groupId     Int?
   amount      Float
   paymentDate DateTime @default(now())
   periodStart DateTime?
@@ -92,7 +96,21 @@ model Payment {
   method      String
   receiptUrl  String?
 
-  student User @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  student User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  group   Group? @relation(fields: [groupId], references: [id])
+}
+
+model Debt {
+  id        Int      @id @default(autoincrement())
+  studentId Int
+  groupId   Int?
+  amount    Float
+  month     String
+  status    String   @default("UNPAID")
+  createdAt DateTime @default(now())
+
+  student   User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  group     Group? @relation(fields: [groupId], references: [id])
 }
 
 model Attendance {
@@ -125,7 +143,7 @@ model Task {
   groupId     Int
   totalCount  Int          @default(0)
   createdAt   DateTime     @default(now())
-  status      String       @default("active") // active, urgent, completed
+  status      String       @default("active")
   group       Group        @relation(fields: [groupId], references: [id])
   submissions Submission[]
 }
@@ -135,7 +153,7 @@ model Submission {
   taskId    Int
   studentId Int
   score     Int?
-  status    String   @default("pending") // pending, checked
+  status    String   @default("pending")
   createdAt DateTime @default(now())
   student   User     @relation(fields: [studentId], references: [id])
   task      Task     @relation(fields: [taskId], references: [id])

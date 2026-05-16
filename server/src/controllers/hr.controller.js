@@ -21,45 +21,60 @@ const hrController = {
         }
     },
 
-    // POST calculate KPI
+    // POST calculate KPI (Salary based on percentage)
     calculateTeacherKPI: async (req, res) => {
         try {
             const { teacherId } = req.body;
 
             const teacher = await prisma.user.findUnique({
                 where: { id: parseInt(teacherId) },
-                include: { teacherProfile: true, groupsTaught: { include: { students: true } } }
+                include: { teacherProfile: true, groupsTaught: true }
             });
 
             if (!teacher || teacher.role !== 'TEACHER') {
                 return res.status(404).json({ message: "Bunday o'qituvchi topilmadi" });
             }
 
-            // Business logic mapping: 1 student = 15 coins for bonus example
-            let totalStudentsCount = 0;
-            teacher.groupsTaught.forEach(group => {
-                totalStudentsCount += group.students.length;
+            const groupIds = teacher.groupsTaught.map(g => g.id);
+
+            // Get current month start and end dates
+            const now = new Date();
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+            // Find all payments made to this teacher's groups this month
+            const payments = await prisma.payment.findMany({
+                where: {
+                    groupId: { in: groupIds },
+                    paymentDate: {
+                        gte: firstDay,
+                        lte: lastDay
+                    }
+                }
             });
 
-            // Simple mock logic: Rating determines bonus multiplication
-            const calculatedBonus = totalStudentsCount * 15000 * (teacher.teacherProfile.rating / 5);
+            const totalPayments = payments.reduce((acc, curr) => acc + curr.amount, 0);
+            const percentage = teacher.teacherProfile.paymentPercentage || 0;
+            
+            // Calculate salary
+            const calculatedSalary = totalPayments * (percentage / 100);
 
             const updatedProfile = await prisma.teacherProfile.update({
                 where: { userId: parseInt(teacherId) },
-                data: { bonus: Math.round(calculatedBonus) }
+                data: { bonus: Math.round(calculatedSalary) }
             });
 
-            res.json({ message: "KPI Bonus hisoblandi!", bonus: updatedProfile.bonus });
+            res.json({ message: "Oylik maosh hisoblandi!", bonus: updatedProfile.bonus, totalPayments, percentage });
         } catch (error) {
             console.error(error);
-            res.status(500).json({ message: "KPI hisoblashda xatolik yuz berdi" });
+            res.status(500).json({ message: "Hisoblashda xatolik yuz berdi" });
         }
     },
 
     // POST create teacher
     createTeacher: async (req, res) => {
         try {
-            const { name, phone, password, subject, baseSalary } = req.body;
+            const { name, phone, password, subject, baseSalary, paymentPercentage } = req.body;
 
             // Create the teacher user and profile in a transaction
             const newTeacher = await prisma.user.create({
@@ -72,6 +87,7 @@ const hrController = {
                         create: {
                             subject: subject || 'Noma\'lum',
                             baseSalary: parseFloat(baseSalary) || 0,
+                            paymentPercentage: parseFloat(paymentPercentage) || 0,
                             rating: 0,
                             bonus: 0
                         }

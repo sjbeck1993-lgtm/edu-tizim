@@ -7,7 +7,8 @@ const paymentController = {
         try {
             const payments = await prisma.payment.findMany({
                 include: {
-                    student: { select: { name: true, phone: true } }
+                    student: { select: { name: true, phone: true } },
+                    group: { select: { name: true } }
                 },
                 orderBy: { createdAt: 'desc' }
             });
@@ -19,10 +20,12 @@ const paymentController = {
 
     createPayment: async (req, res) => {
         try {
-            const { studentId, amount, type, description, date } = req.body;
+            const { studentId, amount, type, description, date, groupId } = req.body;
+            
             const newPayment = await prisma.payment.create({
                 data: {
                     studentId: parseInt(studentId),
+                    groupId: groupId ? parseInt(groupId) : null,
                     amount: parseFloat(amount),
                     type,
                     description,
@@ -35,6 +38,26 @@ const paymentController = {
                 where: { userId: parseInt(studentId) },
                 data: { balance: { increment: parseFloat(amount) } }
             });
+
+            // Avtomatik ravishda qarzdorlikni yopish (Avvalgi oylardan boshlab)
+            if (groupId) {
+                const unpaidDebts = await prisma.debt.findMany({
+                    where: { 
+                        studentId: parseInt(studentId), 
+                        groupId: parseInt(groupId), 
+                        status: 'UNPAID' 
+                    },
+                    orderBy: { createdAt: 'asc' } // Eski qarzlardan boshlab
+                });
+
+                if (unpaidDebts.length > 0) {
+                    // Agar faqat bitta qarzni yopmoqchi bo'lsak:
+                    await prisma.debt.update({
+                        where: { id: unpaidDebts[0].id },
+                        data: { status: 'PAID' }
+                    });
+                }
+            }
 
             res.status(201).json(newPayment);
         } catch (error) {
@@ -49,16 +72,9 @@ const paymentController = {
                 where: { status: 'UNPAID' },
                 include: {
                     student: {
-                        select: {
-                            id: true,
-                            name: true,
-                            phone: true,
-                            telegramId: true,
-                            studentProfile: {
-                                include: { group: true }
-                            }
-                        }
-                    }
+                        select: { id: true, name: true, phone: true, telegramId: true }
+                    },
+                    group: true // Debt modelining o'zida group bor endi
                 },
                 orderBy: { month: 'desc' }
             });
@@ -72,27 +88,23 @@ const paymentController = {
         try {
             const { type, studentName, amount, month } = req.body;
             const botToken = process.env.TELEGRAM_BOT_TOKEN;
-            const globalChatId = process.env.TELEGRAM_CHAT_ID;
 
             if (type === 'bulk' || type === 'bulk-private') {
                 const debtStudents = await prisma.debt.findMany({
                     where: { status: 'UNPAID' },
                     include: {
-                        student: {
-                            include: {
-                                studentProfile: { include: { group: true } }
-                            }
-                        }
+                        student: true,
+                        group: true
                     }
                 });
 
                 if (type === 'bulk') {
                     const groupedDebts = {};
                     debtStudents.forEach(d => {
-                        const targetId = d.student.studentProfile?.group?.telegramChatId;
+                        const targetId = d.group?.telegramChatId;
                         if (targetId) {
                             if (!groupedDebts[targetId]) {
-                                groupedDebts[targetId] = { name: d.student.studentProfile.group.name, students: [] };
+                                groupedDebts[targetId] = { name: d.group.name, students: [] };
                             }
                             groupedDebts[targetId].students.push(d);
                         }
@@ -116,7 +128,7 @@ const paymentController = {
                     for (const d of debtStudents) {
                         const tid = d.student.telegramId;
                         if (tid) {
-                            const msg = `🔔 <b>TO'LOV ESLATMASI:</b>\n\nHurmatli <b>${d.student.name}</b>, sizning <b>${d.student.studentProfile?.group?.name}</b> kursi uchun <b>${d.amount}</b> so'm qarzdorligingiz mavjud.`;
+                            const msg = `🔔 <b>TO'LOV ESLATMASI:</b>\n\nHurmatli <b>${d.student.name}</b>, sizning <b>${d.group?.name}</b> kursi uchun <b>${d.amount}</b> so'm qarzdorligingiz mavjud.`;
                             await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, { chat_id: tid, text: msg, parse_mode: 'HTML' });
                             sent++;
                         }
@@ -125,14 +137,15 @@ const paymentController = {
                 }
             } else {
                 // Single SMS
-                const student = await prisma.user.findFirst({
-                    where: { name: studentName },
-                    include: { studentProfile: { include: { group: true } } }
+                const debt = await prisma.debt.findFirst({
+                    where: { student: { name: studentName }, status: 'UNPAID' },
+                    include: { student: true, group: true }
                 });
-                const targetChatId = student?.studentProfile?.group?.telegramChatId;
+                
+                const targetChatId = debt?.group?.telegramChatId;
                 if (!targetChatId) return res.status(400).json({ message: "Guruh ID si sozlanmagan!" });
 
-                const msg = `🔔 <b>TO'LOV ESLATMASI:</b>\n\nHurmatli <b>${studentName}</b>, sizning <b>${student.studentProfile?.group?.name}</b> kursi uchun ${month ? month + ' oyi uchun ' : ''}<b>${amount}</b> so'm qarzdorligingiz mavjud.`;
+                const msg = `🔔 <b>TO'LOV ESLATMASI:</b>\n\nHurmatli <b>${studentName}</b>, sizning <b>${debt.group.name}</b> kursi uchun ${month ? month + ' oyi uchun ' : ''}<b>${amount}</b> so'm qarzdorligingiz mavjud.`;
                 await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, { chat_id: targetChatId, text: msg, parse_mode: 'HTML' });
                 return res.json({ message: "Xabar yuborildi!" });
             }

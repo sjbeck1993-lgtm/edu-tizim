@@ -45,13 +45,14 @@ exports.getStudentDashboardStats = async (req, res) => {
         })).slice(0, 5); // Take recent 5
 
         const profile = user.studentProfile || {};
+        const activeGroup = profile.groups && profile.groups.length > 0 ? profile.groups[0] : null;
 
         res.json({
             name: user.name,
-            courseName: profile.group?.course?.name || "Biriktirilmagan",
-            groupName: profile.group?.name || "Biriktirilmagan",
-            classDays: profile.group?.classDays || [],
-            classTime: profile.group?.classTime || '',
+            courseName: activeGroup?.course?.name || "Biriktirilmagan",
+            groupName: activeGroup?.name || "Biriktirilmagan",
+            classDays: activeGroup?.classDays || [],
+            classTime: activeGroup?.classTime || '',
             level: profile.level || 1,
             coins: profile.coins || 0,
             xp: (profile.level || 1) * 850, // Mock XP calc
@@ -75,7 +76,7 @@ exports.getAllStudents = async (req, res) => {
             where: { role: 'STUDENT' },
             include: {
                 studentProfile: {
-                    include: { group: true }
+                    include: { groups: true }
                 }
             },
             orderBy: { createdAt: 'desc' }
@@ -102,6 +103,11 @@ exports.createStudent = async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password || '123456', 10);
 
+        let groupConnect = undefined;
+        if (groupId && groupId !== "") {
+            groupConnect = { connect: [{ id: parseInt(groupId) }] };
+        }
+
         const newStudent = await prisma.user.create({
             data: {
                 name,
@@ -110,7 +116,7 @@ exports.createStudent = async (req, res) => {
                 role: 'STUDENT',
                 studentProfile: {
                     create: {
-                        groupId: groupId && groupId !== "" ? parseInt(groupId) : null,
+                        groups: groupConnect,
                         joinedAt: joinedAt ? new Date(joinedAt) : new Date()
                     }
                 }
@@ -130,14 +136,13 @@ exports.createStudent = async (req, res) => {
                     const monthsName = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
                     const formattedDate = monthsName[joinDateObj.getMonth()];
 
-                    await prisma.payment.create({
+                    await prisma.debt.create({
                         data: {
                             studentId: newStudent.id,
+                            groupId: group.id,
                             amount: group.course.monthlyPrice,
                             month: formattedDate,
-                            periodStart: joinDateObj,
-                            method: '-',
-                            status: 'debt'
+                            status: 'UNPAID'
                         }
                     });
                 }
@@ -158,45 +163,47 @@ exports.createStudent = async (req, res) => {
     }
 };
 
-// O'quvchi ma'lumotlarini / guruhini tahrirlash
+// O'quvchi ma'lumotlarini tahrirlash
 exports.updateStudent = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, phone, password, groupId, joinedAt } = req.body;
+        const { name, phone, password, groupId, joinedAt } = req.body; // groupId bitta kelishi mumkin
 
-        // Asosiy ma'lumotlarni yangilash uchun obyekt
         const updateData = { name, phone };
 
-        // Agar parol ham kiritilgan bo'lsa, almashtiramiz
         if (password && password.trim() !== '') {
             updateData.password = await bcrypt.hash(password, 10);
         }
 
-        // 1. Userni yangilaymiz
         const updatedUser = await prisma.user.update({
             where: { id: parseInt(id) },
             data: updateData
         });
 
-        // 2. StudentProfileni yangilaymiz (yoki yo'q bo'lsa yaratamiz)
         const profile = await prisma.studentProfile.findUnique({
             where: { userId: parseInt(id) }
         });
+
+        // Agar bitta guruh ID yuborilsa, uni mavjud guruhlarga qo'shish yoki almashtirish
+        let groupConnect = undefined;
+        if (groupId && groupId !== "") {
+            groupConnect = { connect: [{ id: parseInt(groupId) }] };
+        }
 
         if (profile) {
             await prisma.studentProfile.update({
                 where: { userId: parseInt(id) },
                 data: {
-                    groupId: groupId ? parseInt(groupId) : null,
-                    joinedAt: joinedAt ? new Date(joinedAt) : new Date()
+                    joinedAt: joinedAt ? new Date(joinedAt) : new Date(),
+                    groups: groupConnect
                 }
             });
         } else {
             await prisma.studentProfile.create({
                 data: {
                     userId: parseInt(id),
-                    groupId: groupId ? parseInt(groupId) : null,
-                    joinedAt: joinedAt ? new Date(joinedAt) : new Date()
+                    joinedAt: joinedAt ? new Date(joinedAt) : new Date(),
+                    groups: groupConnect
                 }
             });
         }
@@ -209,21 +216,25 @@ exports.updateStudent = async (req, res) => {
     }
 };
 
-// O'quvchini guruhdan guruhga o'tkazish
+// O'quvchini guruhga QO'SHISH (avvalgisidan o'chirmasdan)
 exports.transferStudent = async (req, res) => {
     try {
         const { id } = req.params;
         const { groupId } = req.body;
 
+        if (!groupId) return res.status(400).json({ message: "Guruh tanlanmagan!" });
+
         await prisma.studentProfile.update({
             where: { userId: parseInt(id) },
-            data: { groupId: groupId ? parseInt(groupId) : null }
+            data: { 
+                groups: { connect: [{ id: parseInt(groupId) }] } 
+            }
         });
 
-        res.json({ message: "O'quvchi boshqa guruhga o'tkazildi!" });
+        res.json({ message: "O'quvchi guruhga muvaffaqiyatli qo'shildi!" });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: "O'tkazishda xatolik yuz berdi" });
+        res.status(500).json({ message: "Guruhga qo'shishda xato" });
     }
 };
 
