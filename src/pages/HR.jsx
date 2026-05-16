@@ -9,7 +9,7 @@ const HR = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [formData, setFormData] = useState({ name: '', phone: '', subject: '', baseSalary: '' });
+    const [formData, setFormData] = useState({ name: '', phone: '', subject: '', baseSalary: '', paymentPercentage: '' });
 
     useEffect(() => {
         fetchTeachers();
@@ -23,6 +23,7 @@ const HR = () => {
                 name: t.name,
                 subject: t.teacherProfile?.subject || 'Belgilanmagan',
                 baseSalary: t.teacherProfile?.baseSalary || 0,
+                paymentPercentage: t.teacherProfile?.paymentPercentage || 0,
                 rating: t.teacherProfile?.rating || 0,
                 bonus: t.teacherProfile?.bonus || 0,
                 students: t.groupsTaught?.reduce((acc, curr) => acc + curr.students.length, 0) || 0
@@ -79,10 +80,20 @@ const HR = () => {
             await axiosClient.post('/hr/teachers', formData);
             toast.success("Yangi o'qituvchi muvaffaqiyatli saqlandi!");
             setIsModalOpen(false);
-            setFormData({ name: '', phone: '', subject: '', baseSalary: '' });
+            setFormData({ name: '', phone: '', subject: '', baseSalary: '', paymentPercentage: '' });
             fetchTeachers();
         } catch (error) {
             toast.error("Xatolik yuz berdi");
+        }
+    };
+
+    const handleCalculateSalary = async (teacher) => {
+        try {
+            const res = await axiosClient.post('/hr/kpi', { teacherId: teacher.id });
+            toast.success(`Hisoblandi! Jami tushum: ${formatCurrency(res.data.totalPayments)}. Ulush: ${res.data.percentage}%. Maosh: ${formatCurrency(res.data.bonus)}`, { duration: 5000 });
+            fetchTeachers();
+        } catch (error) {
+            toast.error("Oylikni hisoblashda xatolik yuz berdi");
         }
     };
 
@@ -179,7 +190,11 @@ const HR = () => {
                                     <span className="kpi-value">{formatCurrency(teacher.baseSalary)}</span>
                                 </div>
                                 <div className="kpi-item">
-                                    <span className="kpi-label">KPI Bonus (Davomat + Reyting):</span>
+                                    <span className="kpi-label">O'quvchilar to'lovidan ulushi:</span>
+                                    <span className="kpi-value font-semibold">{teacher.paymentPercentage}%</span>
+                                </div>
+                                <div className="kpi-item">
+                                    <span className="kpi-label">Hisoblangan ulush:</span>
                                     <span className="kpi-value text-success">+{formatCurrency(teacher.bonus)}</span>
                                 </div>
                             </div>
@@ -189,12 +204,20 @@ const HR = () => {
                                     <span className="total-label">Jami to'lanadi:</span>
                                     <span className="total-amount">{formatCurrency(calculateTotal(teacher))}</span>
                                 </div>
-                                <button
-                                    className="btn btn-primary w-full mt-3"
-                                    onClick={() => handlePayment(teacher)}
-                                >
-                                    To'lov qilish
-                                </button>
+                                <div className="flex gap-2 w-full mt-3">
+                                    <button
+                                        className="btn btn-outline w-full"
+                                        onClick={() => handleCalculateSalary(teacher)}
+                                    >
+                                        Hisoblash
+                                    </button>
+                                    <button
+                                        className="btn btn-primary w-full"
+                                        onClick={() => handlePayment(teacher)}
+                                    >
+                                        To'lov qilish
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ))}
@@ -229,10 +252,15 @@ const HR = () => {
                                 <input type="text" className="input-field" placeholder="Masalan: Ingliz tili"
                                     value={formData.subject} onChange={e => setFormData({ ...formData, subject: e.target.value })} required />
                             </div>
-                            <div className="mb-4">
+                            <div className="mb-2">
                                 <label className="label">Fiks maoshi (UZS)</label>
                                 <input type="number" className="input-field" placeholder="2000000"
                                     value={formData.baseSalary} onChange={e => setFormData({ ...formData, baseSalary: e.target.value })} required />
+                            </div>
+                            <div className="mb-4">
+                                <label className="label">To'lovlardan ulushi (foizda %)</label>
+                                <input type="number" className="input-field" placeholder="Masalan: 50"
+                                    value={formData.paymentPercentage} onChange={e => setFormData({ ...formData, paymentPercentage: e.target.value })} required />
                             </div>
                             <div className="flex gap-2 justify-end mt-4">
                                 <button type="button" className="btn btn-outline" onClick={() => setIsModalOpen(false)}>Bekor qilish</button>

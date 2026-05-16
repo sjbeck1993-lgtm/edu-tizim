@@ -17,12 +17,23 @@ const Finance = () => {
     const [isSmsModalOpen, setIsSmsModalOpen] = useState(false);
     const [selectedReceipt, setSelectedReceipt] = useState(null);
     const [studentsList, setStudentsList] = useState([]);
-    const [formData, setFormData] = useState({ studentId: '', amount: '300000', month: new Date().toISOString().split('T')[0], method: 'Naqd', status: 'paid' });
+    const [courses, setCourses] = useState([]);
+    const [formData, setFormData] = useState({ studentId: '', amount: '300000', month: new Date().toISOString().split('T')[0], method: 'Naqd', status: 'paid', groupId: '' });
 
     useEffect(() => {
         fetchPayments();
         fetchStudentsList();
+        fetchCoursesData();
     }, []);
+
+    const fetchCoursesData = async () => {
+        try {
+            const res = await axiosClient.get('/courses');
+            setCourses(res.data);
+        } catch (error) {
+            console.error("Kurslarni yuklashda xato:", error);
+        }
+    };
 
     const fetchStudentsList = async () => {
         try {
@@ -333,6 +344,23 @@ const Finance = () => {
                                         <option key={s.id} value={s.id}>{s.name}</option>
                                     ))}
                                     {studentsList.length === 0 && <option value="">O'quvchilar yo'q</option>}
+                                </select>
+                            </div>
+                            <div className="mb-2">
+                                <label className="label">Qaysi Guruh Uchun?</label>
+                                <select
+                                    className="input-field"
+                                    value={formData.groupId}
+                                    onChange={e => setFormData({ ...formData, groupId: e.target.value })}
+                                >
+                                    <option value="">-- Guruh tanlang (Ixtiyoriy) --</option>
+                                    {courses.map(c => (
+                                        <optgroup key={c.id} label={c.name}>
+                                            {c.groups && c.groups.map(g => (
+                                                <option key={g.id} value={g.id}>{g.name}</option>
+                                            ))}
+                                        </optgroup>
+                                    ))}
                                 </select>
                             </div>
                             <div className="mb-2">

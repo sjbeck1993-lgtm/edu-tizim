@@ -71,7 +71,7 @@ const Students = () => {
             name: student.name,
             phone: student.phone,
             password: '', // Bo'sh bo'lsa eski parol qoladi
-            groupId: student.studentProfile?.groupId || '',
+            groupId: student.studentProfile?.groups && student.studentProfile.groups.length > 0 ? student.studentProfile.groups[0].id : '',
             joinedAt: student.studentProfile?.joinedAt ? new Date(student.studentProfile.joinedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
         });
         setIsModalOpen(true);
@@ -144,9 +144,17 @@ const Students = () => {
                                     <td className="font-semibold">{student.name}</td>
                                     <td>{student.phone}</td>
                                     <td>
-                                        <span className="group-badge">
-                                            {student.studentProfile?.group?.name || 'Biriktirilmagan'}
-                                        </span>
+                                        <div className="flex flex-wrap gap-1">
+                                            {student.studentProfile?.groups && student.studentProfile.groups.length > 0 ? (
+                                                student.studentProfile.groups.map(g => (
+                                                    <span key={g.id} className="group-badge">
+                                                        {g.name}
+                                                    </span>
+                                                ))
+                                            ) : (
+                                                <span className="group-badge" style={{background: '#f0f0f0', color: '#666'}}>Biriktirilmagan</span>
+                                            )}
+                                        </div>
                                     </td>
                                     <td className="text-muted text-sm">
                                         {student.studentProfile?.joinedAt ? new Date(student.studentProfile.joinedAt).toLocaleDateString() : new Date(student.createdAt).toLocaleDateString()}
@@ -164,7 +172,7 @@ const Students = () => {
                                         <div className="flex gap-2">
                                             <button
                                                 className="icon-btn-small"
-                                                title="Tahrirlash/Guruhga qo'shish"
+                                                title="Tahrirlash/Yangi Guruhga qo'shish"
                                                 onClick={() => openEditModal(student)}
                                             >
                                                 <Edit size={16} />
@@ -194,7 +202,7 @@ const Students = () => {
                 <div className="modal-overlay" onClick={closeModal}>
                     <div className="modal-content mt-4" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="modal-title m-0">{isEditMode ? "O'quvchini Tahrirlash" : "Yangi O'quvchi Qo'shish"}</h3>
+                            <h3 className="modal-title m-0">{isEditMode ? "Tahrirlash va Qo'shish" : "Yangi O'quvchi Qo'shish"}</h3>
                             <button className="icon-btn-small" onClick={closeModal}><X size={20} /></button>
                         </div>
                         <form onSubmit={handleAddStudent}>
@@ -238,7 +246,7 @@ const Students = () => {
                                     required />
                             </div>
                             <div className="mb-4">
-                                <label className="label">Qaysi guruhga (Ixtiyoriy)</label>
+                                <label className="label">Qaysi guruhga (Alohida qo'shish, eskisidan o'chmaydi)</label>
                                 <select
                                     className="input-field"
                                     value={formData.groupId}
