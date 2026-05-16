@@ -9,7 +9,7 @@ const HR = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [formData, setFormData] = useState({ name: '', phone: '', subject: '', baseSalary: '', paymentPercentage: '' });
+    const [formData, setFormData] = useState({ name: '', phone: '', subject: '', paymentPercentage: '' });
 
     useEffect(() => {
         fetchTeachers();
@@ -45,7 +45,7 @@ const HR = () => {
     };
 
     const calculateTotal = (teacher) => {
-        return teacher.baseSalary + teacher.bonus;
+        return teacher.bonus;
     };
 
     const formatCurrency = (amount) => {
@@ -80,7 +80,7 @@ const HR = () => {
             await axiosClient.post('/hr/teachers', formData);
             toast.success("Yangi o'qituvchi muvaffaqiyatli saqlandi!");
             setIsModalOpen(false);
-            setFormData({ name: '', phone: '', subject: '', baseSalary: '', paymentPercentage: '' });
+            setFormData({ name: '', phone: '', subject: '', paymentPercentage: '' });
             fetchTeachers();
         } catch (error) {
             toast.error("Xatolik yuz berdi");
@@ -185,10 +185,7 @@ const HR = () => {
                                     <span className="kpi-label">Biriktirilgan o'quvchilar:</span>
                                     <span className="kpi-value">{teacher.students} ta</span>
                                 </div>
-                                <div className="kpi-item">
-                                    <span className="kpi-label">Fiks oylik:</span>
-                                    <span className="kpi-value">{formatCurrency(teacher.baseSalary)}</span>
-                                </div>
+
                                 <div className="kpi-item">
                                     <span className="kpi-label">O'quvchilar to'lovidan ulushi:</span>
                                     <span className="kpi-value font-semibold">{teacher.paymentPercentage}%</span>
@@ -252,11 +249,7 @@ const HR = () => {
                                 <input type="text" className="input-field" placeholder="Masalan: Ingliz tili"
                                     value={formData.subject} onChange={e => setFormData({ ...formData, subject: e.target.value })} required />
                             </div>
-                            <div className="mb-2">
-                                <label className="label">Fiks maoshi (UZS)</label>
-                                <input type="number" className="input-field" placeholder="2000000"
-                                    value={formData.baseSalary} onChange={e => setFormData({ ...formData, baseSalary: e.target.value })} required />
-                            </div>
+
                             <div className="mb-4">
                                 <label className="label">To'lovlardan ulushi (foizda %)</label>
                                 <input type="number" className="input-field" placeholder="Masalan: 50"
