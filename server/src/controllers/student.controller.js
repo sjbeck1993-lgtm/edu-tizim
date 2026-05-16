@@ -92,7 +92,7 @@ exports.getAllStudents = async (req, res) => {
 exports.createStudent = async (req, res) => {
     try {
         console.log('--- NEW STUDENT REQUEST ---', req.body);
-        let { name, phone, password, groupId, joinedAt } = req.body;
+        let { name, phone, password, groupIds, joinedAt } = req.body;
         
         if (!name || !phone) {
             return res.status(400).json({ message: "Ism va telefon raqam majburiy!" });
@@ -104,8 +104,8 @@ exports.createStudent = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password || '123456', 10);
 
         let groupConnect = undefined;
-        if (groupId && groupId !== "") {
-            groupConnect = { connect: [{ id: parseInt(groupId) }] };
+        if (groupIds && Array.isArray(groupIds) && groupIds.length > 0) {
+            groupConnect = { connect: groupIds.map(id => ({ id: parseInt(id) })) };
         }
 
         const newStudent = await prisma.user.create({
@@ -124,27 +124,29 @@ exports.createStudent = async (req, res) => {
             include: { studentProfile: true }
         });
 
-        // Agar guruhga qo'shilgan bo'lsa, avtomatik birinchi qarzni yozamiz
-        if (groupId && groupId !== "") {
+        // Agar guruhlarga qo'shilgan bo'lsa, avtomatik birinchi qarzni yozamiz
+        if (groupIds && Array.isArray(groupIds) && groupIds.length > 0) {
             try {
-                const group = await prisma.group.findUnique({
-                    where: { id: parseInt(groupId) },
-                    include: { course: true }
-                });
-                if (group && group.course) {
-                    const joinDateObj = joinedAt ? new Date(joinedAt) : new Date();
-                    const monthsName = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
-                    const formattedDate = monthsName[joinDateObj.getMonth()];
+                const joinDateObj = joinedAt ? new Date(joinedAt) : new Date();
+                const monthsName = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
+                const formattedDate = monthsName[joinDateObj.getMonth()];
 
-                    await prisma.debt.create({
-                        data: {
-                            studentId: newStudent.id,
-                            groupId: group.id,
-                            amount: group.course.monthlyPrice,
-                            month: formattedDate,
-                            status: 'UNPAID'
-                        }
+                for (let gId of groupIds) {
+                    const group = await prisma.group.findUnique({
+                        where: { id: parseInt(gId) },
+                        include: { course: true }
                     });
+                    if (group && group.course) {
+                        await prisma.debt.create({
+                            data: {
+                                studentId: newStudent.id,
+                                groupId: group.id,
+                                amount: group.course.monthlyPrice,
+                                month: formattedDate,
+                                status: 'UNPAID'
+                            }
+                        });
+                    }
                 }
             } catch (pErr) {
                 console.error('⚠️ Qarz yozishda xato (lekin o\'quvchi yaratildi):', pErr);
@@ -167,7 +169,7 @@ exports.createStudent = async (req, res) => {
 exports.updateStudent = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, phone, password, groupId, joinedAt } = req.body; // groupId bitta kelishi mumkin
+        const { name, phone, password, groupIds, joinedAt } = req.body;
 
         const updateData = { name, phone };
 
@@ -181,13 +183,13 @@ exports.updateStudent = async (req, res) => {
         });
 
         const profile = await prisma.studentProfile.findUnique({
-            where: { userId: parseInt(id) }
+            where: { userId: parseInt(id) },
+            include: { groups: true }
         });
 
-        // Agar bitta guruh ID yuborilsa, uni mavjud guruhlarga qo'shish yoki almashtirish
         let groupConnect = undefined;
-        if (groupId && groupId !== "") {
-            groupConnect = { connect: [{ id: parseInt(groupId) }] };
+        if (groupIds && Array.isArray(groupIds)) {
+            groupConnect = { set: groupIds.map(gId => ({ id: parseInt(gId) })) };
         }
 
         if (profile) {
@@ -198,6 +200,36 @@ exports.updateStudent = async (req, res) => {
                     groups: groupConnect
                 }
             });
+
+            // Find newly added groups to create debts for them
+            if (groupIds && Array.isArray(groupIds)) {
+                const oldGroupIds = profile.groups.map(g => g.id);
+                const newlyAddedIds = groupIds.filter(gId => !oldGroupIds.includes(parseInt(gId)));
+                
+                if (newlyAddedIds.length > 0) {
+                    const joinDateObj = joinedAt ? new Date(joinedAt) : new Date();
+                    const monthsName = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
+                    const formattedDate = monthsName[joinDateObj.getMonth()];
+
+                    for (let gId of newlyAddedIds) {
+                        const group = await prisma.group.findUnique({
+                            where: { id: parseInt(gId) },
+                            include: { course: true }
+                        });
+                        if (group && group.course) {
+                            await prisma.debt.create({
+                                data: {
+                                    studentId: parseInt(id),
+                                    groupId: group.id,
+                                    amount: group.course.monthlyPrice,
+                                    month: formattedDate,
+                                    status: 'UNPAID'
+                                }
+                            });
+                        }
+                    }
+                }
+            }
         } else {
             await prisma.studentProfile.create({
                 data: {

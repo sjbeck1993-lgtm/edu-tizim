@@ -17,7 +17,7 @@ const Students = () => {
         name: '',
         phone: '',
         password: '',
-        groupId: '',
+        groupIds: [],
         joinedAt: new Date().toISOString().split('T')[0]
     });
 
@@ -71,7 +71,7 @@ const Students = () => {
             name: student.name,
             phone: student.phone,
             password: '', // Bo'sh bo'lsa eski parol qoladi
-            groupId: student.studentProfile?.groups && student.studentProfile.groups.length > 0 ? student.studentProfile.groups[0].id : '',
+            groupIds: student.studentProfile?.groups ? student.studentProfile.groups.map(g => g.id) : [],
             joinedAt: student.studentProfile?.joinedAt ? new Date(student.studentProfile.joinedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
         });
         setIsModalOpen(true);
@@ -81,7 +81,7 @@ const Students = () => {
         setIsModalOpen(false);
         setIsEditMode(false);
         setEditingId(null);
-        setFormData({ name: '', phone: '', password: '', groupId: '', joinedAt: new Date().toISOString().split('T')[0] });
+        setFormData({ name: '', phone: '', password: '', groupIds: [], joinedAt: new Date().toISOString().split('T')[0] });
     };
 
     const handleDeleteStudent = async (id, name) => {
@@ -246,21 +246,32 @@ const Students = () => {
                                     required />
                             </div>
                             <div className="mb-4">
-                                <label className="label">Qaysi guruhga (Alohida qo'shish, eskisidan o'chmaydi)</label>
-                                <select
-                                    className="input-field"
-                                    value={formData.groupId}
-                                    onChange={e => setFormData({ ...formData, groupId: e.target.value })}
-                                >
-                                    <option value="">(Tasdiqlanmagan) Hali guruhga yo'q</option>
+                                <label className="label">Qaysi guruhlarga (Bir nechtasini tanlash mumkin)</label>
+                                <div style={{ border: '1px solid #ddd', padding: '10px', borderRadius: '8px', maxHeight: '150px', overflowY: 'auto' }}>
+                                    {courses.length === 0 && <span className="text-muted text-sm">Guruhlar yo'q</span>}
                                     {courses.map(course => (
-                                        <optgroup key={course.id} label={course.name}>
-                                            {course.groups.map(g => (
-                                                <option key={g.id} value={g.id}>{g.name}</option>
-                                            ))}
-                                        </optgroup>
+                                        <div key={course.id} className="mb-2">
+                                            <strong className="text-sm text-gray-600 block mb-1">{course.name}</strong>
+                                            <div className="flex flex-col gap-1 ml-2">
+                                                {course.groups.map(g => (
+                                                    <label key={g.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={formData.groupIds.includes(g.id)}
+                                                            onChange={(e) => {
+                                                                const newIds = e.target.checked
+                                                                    ? [...formData.groupIds, g.id]
+                                                                    : formData.groupIds.filter(id => id !== g.id);
+                                                                setFormData({ ...formData, groupIds: newIds });
+                                                            }}
+                                                        />
+                                                        {g.name}
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
                                     ))}
-                                </select>
+                                </div>
                             </div>
                             <div className="flex gap-2 justify-end mt-4">
                                 <button type="button" className="btn btn-outline" onClick={closeModal}>Bekor qilish</button>

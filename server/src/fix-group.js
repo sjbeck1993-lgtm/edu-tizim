@@ -1,31 +1,75 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-async function fix() {
-    try {
-        console.log('Ingliz tili (English) guruhini qidiryapman...');
-        
-        // Ingliz tili guruhini topamiz (English nomli)
-        const groups = await prisma.group.findMany();
-        console.log('Topilgan barcha guruhlar:', groups.map(g => g.name));
+async function main() {
+    console.log("Checking attendances...");
+    const attendances = await prisma.attendance.findMany();
+    console.log(attendances.length, "attendances found.");
 
-        const englishGroup = groups.find(g => g.name.toLowerCase().includes('english') || g.name.toLowerCase().includes('ingliz'));
-        
-        if (englishGroup) {
-            console.log(`Guruh topildi: ${englishGroup.name} (ID: ${englishGroup.id})`);
-            const updated = await prisma.group.update({
-                where: { id: englishGroup.id },
-                data: { telegramChatId: '-4958534561' }
-            });
-            console.log('MUVAFFAQIYAT! Yangi Chat ID saqlandi:', updated.telegramChatId);
-        } else {
-            console.log('XATO: Ingliz tili guruhi topilmadi.');
+    const studentGroups = {};
+
+    attendances.forEach(a => {
+        if (!studentGroups[a.studentId]) {
+            studentGroups[a.studentId] = new Set();
         }
-    } catch (e) {
-        console.error('XATO YUZ BERDI:', e.message);
-    } finally {
-        await prisma.$disconnect();
+        studentGroups[a.studentId].add(a.groupId);
+    });
+
+    console.log("Recovered mappings from attendances:");
+    for (const [studentId, groups] of Object.entries(studentGroups)) {
+        console.log(`Student ${studentId} -> Groups: ${[...groups]}`);
+        
+        // Find profile
+        const profile = await prisma.studentProfile.findUnique({
+            where: { userId: parseInt(studentId) }
+        });
+
+        if (profile) {
+            await prisma.studentProfile.update({
+                where: { userId: parseInt(studentId) },
+                data: {
+                    groups: {
+                        connect: [...groups].map(id => ({ id }))
+                    }
+                }
+            });
+            console.log(`Updated student ${studentId} with groups ${[...groups]}`);
+        }
     }
+
+    console.log("Checking debts...");
+    // Debts might have the groupId if I didn't delete them. But wait, I just created the Debt model today! So there are no old debts with groupId.
+
+    console.log("Checking tasks/submissions...");
+    const submissions = await prisma.submission.findMany({ include: { task: true } });
+    const studentTasks = {};
+    submissions.forEach(s => {
+        if (!studentTasks[s.studentId]) {
+            studentTasks[s.studentId] = new Set();
+        }
+        studentTasks[s.studentId].add(s.task.groupId);
+    });
+
+    for (const [studentId, groups] of Object.entries(studentTasks)) {
+        // Find profile
+        const profile = await prisma.studentProfile.findUnique({
+            where: { userId: parseInt(studentId) }
+        });
+
+        if (profile) {
+            await prisma.studentProfile.update({
+                where: { userId: parseInt(studentId) },
+                data: {
+                    groups: {
+                        connect: [...groups].map(id => ({ id }))
+                    }
+                }
+            });
+            console.log(`Updated student ${studentId} from tasks with groups ${[...groups]}`);
+        }
+    }
+
+    console.log("Done");
 }
 
-fix();
+main().catch(console.error).finally(() => prisma.$disconnect());
