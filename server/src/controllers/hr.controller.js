@@ -155,7 +155,7 @@ const hrController = {
             res.json({ message: "O'qituvchi ma'lumotlari yangilandi!" });
         } catch (error) {
             console.error(error);
-            res.status(500).json({ message: "O'qituvchini yangilashda xatolik yuz berdi" });
+            res.status(500).json({ message: "Xatolik: " + error.message });
         }
     },
     // DELETE teacher
