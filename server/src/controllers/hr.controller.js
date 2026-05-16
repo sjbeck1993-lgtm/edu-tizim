@@ -136,11 +136,19 @@ const hrController = {
                 data: updateData
             });
 
-            await prisma.teacherProfile.update({
+            await prisma.teacherProfile.upsert({
                 where: { userId: parseInt(id) },
-                data: {
+                update: {
                     subject: subject || 'Noma\'lum',
                     paymentPercentage: parseFloat(paymentPercentage) || 0
+                },
+                create: {
+                    userId: parseInt(id),
+                    subject: subject || 'Noma\'lum',
+                    baseSalary: 0,
+                    paymentPercentage: parseFloat(paymentPercentage) || 0,
+                    rating: 0,
+                    bonus: 0
                 }
             });
 
