@@ -9,7 +9,9 @@ const HR = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [formData, setFormData] = useState({ name: '', phone: '', subject: '', paymentPercentage: '' });
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [editingId, setEditingId] = useState(null);
+    const [formData, setFormData] = useState({ name: '', phone: '', password: '', subject: '', paymentPercentage: '' });
 
     useEffect(() => {
         fetchTeachers();
@@ -21,6 +23,7 @@ const HR = () => {
             const formatted = res.data.map(t => ({
                 id: t.id,
                 name: t.name,
+                phone: t.phone,
                 subject: t.teacherProfile?.subject || 'Belgilanmagan',
                 baseSalary: t.teacherProfile?.baseSalary || 0,
                 paymentPercentage: t.teacherProfile?.paymentPercentage || 0,
@@ -74,13 +77,37 @@ const HR = () => {
         }
     };
 
+    const openEditModal = (teacher) => {
+        setIsEditMode(true);
+        setEditingId(teacher.id);
+        setFormData({
+            name: teacher.name,
+            phone: teacher.phone || '',
+            password: '',
+            subject: teacher.subject,
+            paymentPercentage: teacher.paymentPercentage
+        });
+        setIsModalOpen(true);
+    };
+
+    const closeModal = () => {
+        setIsModalOpen(false);
+        setIsEditMode(false);
+        setEditingId(null);
+        setFormData({ name: '', phone: '', password: '', subject: '', paymentPercentage: '' });
+    };
+
     const handleAddTeacher = async (e) => {
         e.preventDefault();
         try {
-            await axiosClient.post('/hr/teachers', formData);
-            toast.success("Yangi o'qituvchi muvaffaqiyatli saqlandi!");
-            setIsModalOpen(false);
-            setFormData({ name: '', phone: '', subject: '', paymentPercentage: '' });
+            if (isEditMode) {
+                await axiosClient.put(`/hr/teachers/${editingId}`, formData);
+                toast.success("O'qituvchi ma'lumotlari yangilandi!");
+            } else {
+                await axiosClient.post('/hr/teachers', formData);
+                toast.success("Yangi o'qituvchi muvaffaqiyatli saqlandi!");
+            }
+            closeModal();
             fetchTeachers();
         } catch (error) {
             toast.error("Xatolik yuz berdi");
@@ -170,13 +197,22 @@ const HR = () => {
                                         <Star size={16} fill="var(--warning)" color="var(--warning)" />
                                         <span>{teacher.rating}</span>
                                     </div>
-                                    <button
-                                        className="icon-btn-small hover:bg-red-50 hover:text-red-500"
-                                        onClick={() => handleDeleteTeacher(teacher.id, teacher.name)}
-                                        title="O'chirish"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
+                                    <div className="flex gap-2">
+                                        <button
+                                            className="icon-btn-small hover:bg-blue-50 hover:text-blue-500"
+                                            onClick={() => openEditModal(teacher)}
+                                            title="Tahrirlash"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                        </button>
+                                        <button
+                                            className="icon-btn-small hover:bg-red-50 hover:text-red-500"
+                                            onClick={() => handleDeleteTeacher(teacher.id, teacher.name)}
+                                            title="O'chirish"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -227,11 +263,11 @@ const HR = () => {
             </div>
 
             {isModalOpen && (
-                <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+                <div className="modal-overlay" onClick={closeModal}>
                     <div className="modal-content" onClick={e => e.stopPropagation()}>
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="modal-title m-0">Yangi O'qituvchi</h3>
-                            <button className="icon-btn-small" onClick={() => setIsModalOpen(false)}><X size={20} /></button>
+                            <h3 className="modal-title m-0">{isEditMode ? "O'qituvchini tahrirlash" : "Yangi O'qituvchi"}</h3>
+                            <button className="icon-btn-small" onClick={closeModal}><X size={20} /></button>
                         </div>
                         <form onSubmit={handleAddTeacher}>
                             <div className="mb-2">
@@ -240,9 +276,14 @@ const HR = () => {
                                     value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required />
                             </div>
                             <div className="mb-2">
-                                <label className="label">Telefon raqami</label>
+                                <label className="label">Telefon raqami (Login)</label>
                                 <input type="text" className="input-field" placeholder="+998"
                                     value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} required />
+                            </div>
+                            <div className="mb-2">
+                                <label className="label">{isEditMode ? "Yangi Parol (bo'sh qoldirsa o'zgarmaydi)" : "Parol (tizimga kirish uchun)"}</label>
+                                <input type="text" className="input-field" placeholder={isEditMode ? "***" : "123456"}
+                                    value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} required={!isEditMode} />
                             </div>
                             <div className="mb-2">
                                 <label className="label">Fani</label>
@@ -256,8 +297,8 @@ const HR = () => {
                                     value={formData.paymentPercentage} onChange={e => setFormData({ ...formData, paymentPercentage: e.target.value })} required />
                             </div>
                             <div className="flex gap-2 justify-end mt-4">
-                                <button type="button" className="btn btn-outline" onClick={() => setIsModalOpen(false)}>Bekor qilish</button>
-                                <button type="submit" className="btn btn-primary">Saqlash</button>
+                                <button type="button" className="btn btn-outline" onClick={closeModal}>Bekor qilish</button>
+                                <button type="submit" className="btn btn-primary">{isEditMode ? "Yangilash" : "Saqlash"}</button>
                             </div>
                         </form>
                     </div>
