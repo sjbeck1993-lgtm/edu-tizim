@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axiosClient from '../api/axiosClient';
-import { UserPlus, Search, Star, TrendingUp, DollarSign, X, Trash2 } from 'lucide-react';
+import { UserPlus, Search, Star, TrendingUp, DollarSign, X, Trash2, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 import './HR.css';
 
@@ -297,8 +297,8 @@ const HR = () => {
                                     value={formData.paymentPercentage} onChange={e => setFormData({ ...formData, paymentPercentage: e.target.value })} required />
                             </div>
                             <div className="flex gap-2 justify-end mt-4">
-                                <button type="button" className="btn btn-outline" onClick={closeModal}>Bekor qilish</button>
-                                <button type="submit" className="btn btn-primary">{isEditMode ? "Yangilash" : "Saqlash"}</button>
+                                <button type="button" className="btn btn-outline" onClick={closeModal}><X size={16} /> Bekor qilish</button>
+                                <button type="submit" className="btn btn-primary"><Save size={16} /> {isEditMode ? "Yangilash" : "Saqlash"}</button>
                             </div>
                         </form>
                     </div>

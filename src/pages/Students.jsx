@@ -274,8 +274,8 @@ const Students = () => {
                                 </div>
                             </div>
                             <div className="flex gap-2 justify-end mt-4">
-                                <button type="button" className="btn btn-outline" onClick={closeModal}>Bekor qilish</button>
-                                <button type="submit" className="btn btn-primary">{isEditMode ? "Yangilash" : "Saqlash"}</button>
+                                <button type="button" className="btn btn-outline" onClick={closeModal}><X size={16} /> Bekor qilish</button>
+                                <button type="submit" className="btn btn-primary"><Plus size={16} /> {isEditMode ? "Yangilash" : "Saqlash"}</button>
                             </div>
                         </form>
                     </div>

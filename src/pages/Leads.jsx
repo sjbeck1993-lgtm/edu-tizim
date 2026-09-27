@@ -276,8 +276,8 @@ const Leads = () => {
                                 </select>
                             </div>
                             <div className="flex gap-2 justify-end mt-4">
-                                <button type="button" className="btn btn-outline" onClick={() => setIsModalOpen(false)}>Bekor qilish</button>
-                                <button type="submit" className="btn btn-primary">Saqlash</button>
+                                <button type="button" className="btn btn-outline" onClick={() => setIsModalOpen(false)}><X size={16} /> Bekor qilish</button>
+                                <button type="submit" className="btn btn-primary"><Plus size={16} /> Saqlash</button>
                             </div>
                         </form>
                     </div>
