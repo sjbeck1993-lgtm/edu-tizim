@@ -55,6 +55,13 @@
     line-height: 1.5;
 }
 
+.login-illustration {
+    width: 100%;
+    max-width: 380px;
+    height: auto;
+    margin-bottom: var(--space-8);
+}
+
 .login-brand-features {
     display: flex;
     flex-direction: column;
