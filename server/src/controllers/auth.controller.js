@@ -42,7 +42,7 @@ const authController = {
             res.json({
                 message: "Muvaffaqiyatli kirdingiz!",
                 token,
-                user: { id: user.id, name: user.name, role: user.role }
+                user: { id: user.id, name: user.name, role: user.role, avatarUrl: user.avatarUrl }
             });
 
         } catch (error) {
@@ -56,7 +56,7 @@ const authController = {
             // Returns user info from token (handled by middleware)
             const user = await prisma.user.findUnique({
                 where: { id: req.user.id },
-                select: { id: true, name: true, phone: true, role: true }
+                select: { id: true, name: true, phone: true, role: true, avatarUrl: true }
             });
             res.json(user);
         } catch (error) {
@@ -95,6 +95,33 @@ const authController = {
         } catch (error) {
             console.error("Change password error:", error);
             res.status(500).json({ message: "Serverda xatolik yuz berdi" });
+        }
+    },
+
+    uploadAvatar: async (req, res) => {
+        try {
+            if (!req.file) {
+                return res.status(400).json({ message: "Rasm fayli topilmadi." });
+            }
+
+            // Admin boshqa foydalanuvchi uchun yuklashi mumkin (:userId), aks holda o'zi uchun
+            const targetUserId = req.params.userId ? parseInt(req.params.userId) : req.user.id;
+
+            const dataUri = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+
+            const updatedUser = await prisma.user.update({
+                where: { id: targetUserId },
+                data: { avatarUrl: dataUri },
+                select: { id: true, name: true, avatarUrl: true }
+            });
+
+            res.json({ message: "Profil rasmi yangilandi!", user: updatedUser });
+        } catch (error) {
+            console.error("Avatar upload error:", error);
+            if (error.code === 'P2025') {
+                return res.status(404).json({ message: "Foydalanuvchi topilmadi." });
+            }
+            res.status(500).json({ message: error.message || "Rasmni yuklashda xatolik yuz berdi" });
         }
     }
 };

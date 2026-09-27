@@ -22,3 +22,24 @@
 .modal-content.mt-4 {
     margin-top: 2rem;
 }
+
+.student-row-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: var(--primary-blue, var(--primary));
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: bold;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.student-row-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}

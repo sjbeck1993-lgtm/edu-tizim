@@ -46,7 +46,11 @@ const Header = () => {
                         <span className="user-role">{user.role}</span>
                     </div>
                     <div className="user-avatar">
-                        <User size={20} />
+                        {user.avatarUrl ? (
+                            <img src={user.avatarUrl} alt={user.name} className="user-avatar-img" />
+                        ) : (
+                            <User size={20} />
+                        )}
                     </div>
                 </div>
 

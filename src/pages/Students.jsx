@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, Trash2, Edit, X } from 'lucide-react';
+import { Plus, Search, Trash2, Edit, X, Camera, User } from 'lucide-react';
 import toast from 'react-hot-toast';
 import axiosClient from '../api/axiosClient';
 import './Students.css';
@@ -20,6 +20,8 @@ const Students = () => {
         groupIds: [],
         joinedAt: new Date().toISOString().split('T')[0]
     });
+    const [modalAvatarUrl, setModalAvatarUrl] = useState(null);
+    const [avatarUploading, setAvatarUploading] = useState(false);
 
     useEffect(() => {
         fetchStudents();
@@ -74,6 +76,7 @@ const Students = () => {
             groupIds: student.studentProfile?.groups ? student.studentProfile.groups.map(g => g.id) : [],
             joinedAt: student.studentProfile?.joinedAt ? new Date(student.studentProfile.joinedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
         });
+        setModalAvatarUrl(student.avatarUrl || null);
         setIsModalOpen(true);
     };
 
@@ -82,6 +85,34 @@ const Students = () => {
         setIsEditMode(false);
         setEditingId(null);
         setFormData({ name: '', phone: '', password: '', groupIds: [], joinedAt: new Date().toISOString().split('T')[0] });
+        setModalAvatarUrl(null);
+    };
+
+    const handleStudentAvatarUpload = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file || !editingId) return;
+
+        if (!file.type.startsWith('image/')) {
+            toast.error("Faqat rasm fayllarini tanlang.");
+            return;
+        }
+
+        const formDataUpload = new FormData();
+        formDataUpload.append('avatar', file);
+
+        setAvatarUploading(true);
+        try {
+            const response = await axiosClient.post(`/auth/avatar/${editingId}`, formDataUpload, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            setModalAvatarUrl(response.data.user.avatarUrl);
+            toast.success("Rasm yuklandi!");
+            fetchStudents();
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Rasmni yuklashda xatolik yuz berdi.");
+        } finally {
+            setAvatarUploading(false);
+        }
     };
 
     const handleDeleteStudent = async (id, name) => {
@@ -141,7 +172,14 @@ const Students = () => {
                         <tbody>
                             {filteredStudents.map(student => (
                                 <tr key={student.id}>
-                                    <td className="font-semibold">{student.name}</td>
+                                    <td className="font-semibold">
+                                        <div className="flex items-center gap-2">
+                                            <div className="student-row-avatar">
+                                                {student.avatarUrl ? <img src={student.avatarUrl} alt="" /> : student.name.charAt(0)}
+                                            </div>
+                                            {student.name}
+                                        </div>
+                                    </td>
                                     <td>{student.phone}</td>
                                     <td>
                                         <div className="flex flex-wrap gap-1">
@@ -206,6 +244,17 @@ const Students = () => {
                             <button className="icon-btn-small" onClick={closeModal}><X size={20} /></button>
                         </div>
                         <form onSubmit={handleAddStudent}>
+                            {isEditMode && (
+                                <div className="mb-4 flex items-center gap-3">
+                                    <div className="student-row-avatar" style={{ width: 56, height: 56 }}>
+                                        {modalAvatarUrl ? <img src={modalAvatarUrl} alt="" /> : <User size={24} />}
+                                    </div>
+                                    <label className="btn btn-outline btn-sm" style={{ cursor: avatarUploading ? 'not-allowed' : 'pointer' }}>
+                                        <Camera size={14} /> {avatarUploading ? 'Yuklanmoqda...' : 'Rasm yuklash'}
+                                        <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleStudentAvatarUpload} disabled={avatarUploading} />
+                                    </label>
+                                </div>
+                            )}
                             <div className="mb-2">
                                 <label className="label">O'quvchi F.I.SH</label>
                                 <input

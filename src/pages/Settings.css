@@ -24,6 +24,42 @@
     padding: var(--space-6);
 }
 
+.settings-card + .settings-card {
+    margin-top: var(--space-6);
+}
+
+.avatar-upload-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-6);
+}
+
+.avatar-preview {
+    width: 72px;
+    height: 72px;
+    border-radius: var(--radius-full);
+    background-color: var(--bg-color);
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+    border: 1px solid var(--border-color);
+}
+
+.avatar-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-hint {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin-top: var(--space-2);
+}
+
 .settings-card-header {
     display: flex;
     align-items: center;
