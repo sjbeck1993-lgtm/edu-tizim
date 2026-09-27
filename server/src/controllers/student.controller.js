@@ -11,7 +11,7 @@ exports.getStudentDashboardStats = async (req, res) => {
             include: {
                 studentProfile: {
                     include: {
-                        group: {
+                        groups: {
                             include: { course: true }
                         }
                     }

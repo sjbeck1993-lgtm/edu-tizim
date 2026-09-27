@@ -1,4 +1,3 @@
-import axios from 'react';
 import axiosInstance from 'axios';
 
 // Base API instance configuration

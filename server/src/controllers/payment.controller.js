@@ -20,32 +20,36 @@ const paymentController = {
 
     createPayment: async (req, res) => {
         try {
-            const { studentId, amount, type, description, date, groupId } = req.body;
-            
+            const { studentId, amount, month, method, status, groupId } = req.body;
+
+            if (!studentId || !amount || !month || !method) {
+                return res.status(400).json({ message: "studentId, amount, month va method maydonlari majburiy." });
+            }
+
+            const parsedStudentId = parseInt(studentId);
+            const parsedAmount = parseFloat(amount);
+            if (Number.isNaN(parsedStudentId) || Number.isNaN(parsedAmount)) {
+                return res.status(400).json({ message: "studentId yoki amount noto'g'ri formatda." });
+            }
+
             const newPayment = await prisma.payment.create({
                 data: {
-                    studentId: parseInt(studentId),
+                    studentId: parsedStudentId,
                     groupId: groupId ? parseInt(groupId) : null,
-                    amount: parseFloat(amount),
-                    type,
-                    description,
-                    date: date ? new Date(date) : new Date()
+                    amount: parsedAmount,
+                    month,
+                    method,
+                    status: status || 'paid'
                 }
-            });
-
-            // Update student balance
-            await prisma.studentProfile.update({
-                where: { userId: parseInt(studentId) },
-                data: { balance: { increment: parseFloat(amount) } }
             });
 
             // Avtomatik ravishda qarzdorlikni yopish (Avvalgi oylardan boshlab)
             if (groupId) {
                 const unpaidDebts = await prisma.debt.findMany({
-                    where: { 
-                        studentId: parseInt(studentId), 
-                        groupId: parseInt(groupId), 
-                        status: 'UNPAID' 
+                    where: {
+                        studentId: parsedStudentId,
+                        groupId: parseInt(groupId),
+                        status: 'UNPAID'
                     },
                     orderBy: { createdAt: 'asc' } // Eski qarzlardan boshlab
                 });
@@ -61,7 +65,7 @@ const paymentController = {
 
             res.status(201).json(newPayment);
         } catch (error) {
-            console.error(error);
+            console.error("Payment creation error:", error);
             res.status(500).json({ message: "To'lovni saqlashda xato" });
         }
     },

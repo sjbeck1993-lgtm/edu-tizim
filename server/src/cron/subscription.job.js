@@ -7,7 +7,7 @@ const startSubscriptionCron = () => {
     cron.schedule('1 0 * * *', async () => {
         console.log("Cron Job ishga tushdi: Obuna muddatlarini tekshirish...");
         try {
-            // Find students whose subscription has ended and who are in a group
+            // Find students whose subscription has ended (bir o'quvchi bir nechta guruhda bo'lishi mumkin)
             const studentsToCharge = await prisma.user.findMany({
                 where: {
                     role: 'STUDENT',
@@ -15,14 +15,13 @@ const startSubscriptionCron = () => {
                         OR: [
                             { subEndsAt: { lt: new Date() } },
                             { subEndsAt: null }
-                        ],
-                        groupId: { not: null }
+                        ]
                     }
                 },
                 include: {
                     studentProfile: {
                         include: {
-                            group: {
+                            groups: {
                                 include: { course: true }
                             }
                         }
@@ -34,33 +33,38 @@ const startSubscriptionCron = () => {
             const todayDateStr = new Date().toISOString().split('T')[0];
 
             for (const student of studentsToCharge) {
-                const group = student.studentProfile?.group;
-                if (!group || !group.course) continue;
+                const groups = student.studentProfile?.groups || [];
 
-                // Shu o'quvchida to'lanmagan qarz mavjudligini tekshiramiz. (Ustma-ust qarz tushmasligi uchun)
-                const existingDebt = await prisma.payment.findFirst({
-                    where: {
-                        studentId: student.id,
-                        status: 'debt'
-                    }
-                });
+                for (const group of groups) {
+                    if (!group.course) continue;
 
-                if (!existingDebt) {
-                    await prisma.payment.create({
-                        data: {
+                    // Shu o'quvchi shu guruh uchun to'lanmagan qarz mavjudligini tekshiramiz (ustma-ust qarz tushmasligi uchun)
+                    const existingDebt = await prisma.payment.findFirst({
+                        where: {
                             studentId: student.id,
-                            amount: group.course.monthlyPrice,
-                            month: todayDateStr,
-                            periodStart: new Date(),
-                            method: '-',
+                            groupId: group.id,
                             status: 'debt'
                         }
                     });
-                    chargedCount++;
+
+                    if (!existingDebt) {
+                        await prisma.payment.create({
+                            data: {
+                                studentId: student.id,
+                                groupId: group.id,
+                                amount: group.course.monthlyPrice,
+                                month: todayDateStr,
+                                periodStart: new Date(),
+                                method: '-',
+                                status: 'debt'
+                            }
+                        });
+                        chargedCount++;
+                    }
                 }
             }
 
-            console.log(`Cron yakunlandi: ${chargedCount} ta o'quvchiga avtomatik qarz yozildi.`);
+            console.log(`Cron yakunlandi: ${chargedCount} ta qarz yozuvi yaratildi.`);
         } catch (error) {
             console.error("Cron Job xatosi:", error);
         }

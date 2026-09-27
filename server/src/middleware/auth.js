@@ -8,7 +8,7 @@ const authenticateToken = (req, res, next) => {
         return res.status(401).json({ message: 'Ruxsat berilmagan! Token topilmadi.' });
     }
 
-    jwt.verify(token, process.env.JWT_SECRET || 'super_secret_key_123', (err, user) => {
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
         if (err) {
             return res.status(403).json({ message: 'Token muddati tugagan yoki yaroqsiz.' });
         }

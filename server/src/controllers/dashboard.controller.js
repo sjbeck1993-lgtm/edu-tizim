@@ -40,7 +40,7 @@ const dashboardController = {
                     student: {
                         include: {
                             studentProfile: {
-                                include: { group: { include: { course: true } } }
+                                include: { groups: { include: { course: true } } }
                             }
                         }
                     }
@@ -48,7 +48,7 @@ const dashboardController = {
             });
 
             const recentActivities = latestPayments.map(p => {
-                const courseName = p.student?.studentProfile?.group?.course?.name || 'Umumiy';
+                const courseName = p.student?.studentProfile?.groups?.[0]?.course?.name || 'Umumiy';
                 return {
                     id: p.id,
                     studentName: p.student.name,
