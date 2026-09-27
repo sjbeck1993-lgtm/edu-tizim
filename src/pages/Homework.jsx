@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, CheckCircle, Clock, Search, BookOpen, AlertCircle, Play, X } from 'lucide-react';
+import { FileText, CheckCircle, Clock, Search, BookOpen, AlertCircle, Play, X, Plus, Send } from 'lucide-react';
 import axiosClient from '../api/axiosClient';
 import toast from 'react-hot-toast';
 import './Homework.css';
@@ -114,7 +114,7 @@ const Homework = () => {
                 </div>
                 <div className="header-actions">
                     <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
-                        + Yangi Vazifa / Test
+                        <Plus size={18} /> Yangi Vazifa / Test
                     </button>
                 </div>
             </div>
@@ -235,7 +235,7 @@ const Homework = () => {
                                     Guruhning 35% qismi <b>manfiy sonlarni qo'shish</b> mavzusida xatoga yo'l qo'ymoqda. Ular asosan 4- va 5-savollarda qoqilishgan. Keyingi darsda shu mavzuni takrorlash tavsiya etiladi.
                                 </p>
                                 <div className="mt-2 text-right">
-                                    <button className="btn btn-sm" onClick={notifyAIInsight} style={{ background: 'white', color: '#6d28d9', borderColor: '#d8b4fe' }}>Ota-onalarga SMS xabar berish</button>
+                                    <button className="btn btn-sm" onClick={notifyAIInsight} style={{ background: 'white', color: '#6d28d9', borderColor: '#d8b4fe' }}><Send size={14} /> Ota-onalarga SMS xabar berish</button>
                                 </div>
                             </div>
                         </div>
@@ -287,8 +287,8 @@ const Homework = () => {
                                     required />
                             </div>
                             <div className="flex gap-2 justify-end mt-4">
-                                <button type="button" className="btn btn-outline" onClick={() => setIsModalOpen(false)}>Bekor qilish</button>
-                                <button type="submit" className="btn btn-primary">Yaratish</button>
+                                <button type="button" className="btn btn-outline" onClick={() => setIsModalOpen(false)}><X size={16} /> Bekor qilish</button>
+                                <button type="submit" className="btn btn-primary"><Plus size={16} /> Yaratish</button>
                             </div>
                         </form>
                     </div>

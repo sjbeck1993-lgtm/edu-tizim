@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axiosClient from '../api/axiosClient';
-import { Book, Users, FileText, Upload, MoreVertical, PlayCircle, Folder, X, Trash2, Edit } from 'lucide-react';
+import { Book, Users, FileText, Upload, MoreVertical, PlayCircle, Folder, X, Trash2, Edit, Plus, ArrowRightLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import './Courses.css';
 
@@ -291,10 +291,10 @@ const Courses = () => {
                     {activeTab === 'courses' ? (
                         <>
                             <button className="btn btn-outline" onClick={() => setIsGroupModalOpen(true)}>
-                                Yangi Guruh
+                                <Users size={18} /> Yangi Guruh
                             </button>
                             <button className="btn btn-primary" onClick={() => setIsCourseModalOpen(true)}>
-                                + Yangi Kurs
+                                <Plus size={18} /> Yangi Kurs
                             </button>
                         </>
                     ) : (
@@ -348,7 +348,7 @@ const Courses = () => {
 
                             <div className="course-footer">
                                 <span className="course-price">{course.price} <small>/ 45 kun</small></span>
-                                <button className="btn btn-sm btn-outline" onClick={() => openGroupDetails(course)}>Guruhlarni ko'rish</button>
+                                <button className="btn btn-sm btn-outline" onClick={() => openGroupDetails(course)}><Users size={14} /> Guruhlarni ko'rish</button>
                             </div>
                         </div>
                     ))}
@@ -377,7 +377,7 @@ const Courses = () => {
                                     </p>
                                 </div>
                                 <div className="material-actions">
-                                    <button className="btn btn-sm btn-outline" onClick={() => handleOpenFolder(material.name)}>Ochish</button>
+                                    <button className="btn btn-sm btn-outline" onClick={() => handleOpenFolder(material.name)}><Folder size={14} /> Ochish</button>
                                     <button className="icon-btn-small text-danger" onClick={() => handleDeleteMaterial(material.id)}><Trash2 size={18} /></button>
                                 </div>
                             </div>
@@ -560,8 +560,8 @@ const Courses = () => {
                                 </select>
                             </div>
                             <div className="flex gap-2 justify-end mt-4">
-                                <button type="button" className="btn btn-outline" onClick={() => setIsUploadModalOpen(false)}>Bekor qilish</button>
-                                <button type="submit" className="btn btn-primary">Yuklash</button>
+                                <button type="button" className="btn btn-outline" onClick={() => setIsUploadModalOpen(false)}><X size={16} /> Bekor qilish</button>
+                                <button type="submit" className="btn btn-primary"><Upload size={16} /> Yuklash</button>
                             </div>
                         </form>
                     </div>
@@ -682,8 +682,8 @@ const Courses = () => {
                                 </select>
                             </div>
                             <div className="flex gap-2 justify-end mt-4">
-                                <button type="button" className="btn btn-outline" onClick={() => setIsTransferModalOpen(false)}>Bekor qilish</button>
-                                <button type="submit" className="btn btn-primary">O'tkazish</button>
+                                <button type="button" className="btn btn-outline" onClick={() => setIsTransferModalOpen(false)}><X size={16} /> Bekor qilish</button>
+                                <button type="submit" className="btn btn-primary"><ArrowRightLeft size={16} /> O'tkazish</button>
                             </div>
                         </form>
                     </div>

@@ -415,9 +415,9 @@ const Finance = () => {
                                 </div>
                             )}
                             <div className="flex gap-2 justify-end mt-4">
-                                <button type="button" className="btn btn-outline" onClick={() => setIsModalOpen(false)}>Bekor qilish</button>
+                                <button type="button" className="btn btn-outline" onClick={() => setIsModalOpen(false)}><X size={16} /> Bekor qilish</button>
                                 <button type="submit" className={`btn ${formData.status === 'debt' ? 'btn-danger' : 'btn-primary'}`}>
-                                    {formData.status === 'debt' ? 'Qarz qo\'shish' : 'To\'lovni Saqlash'}
+                                    <Plus size={16} /> {formData.status === 'debt' ? 'Qarz qo\'shish' : 'To\'lovni Saqlash'}
                                 </button>
                             </div>
                         </form>

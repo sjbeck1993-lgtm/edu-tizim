@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, CheckCircle2, XCircle, Search, Save, Clock, ChevronDown } from 'lucide-react';
+import { Calendar, CheckCircle2, XCircle, Search, Save, Clock, ChevronDown, Camera } from 'lucide-react';
 import axiosClient from '../api/axiosClient';
 import toast from 'react-hot-toast';
 import './Attendance.css';
@@ -172,7 +172,7 @@ const Attendance = () => {
                     <p>Faqat <b>kelmagan</b> o'quvchilarni belgilang. Qolganlar avtomatik "kelgan" deb olinadi. Yoki Face ID kamerani yoqing.</p>
                 </div>
                 <button className="btn btn-sm btn-outline face-id-btn" onClick={handleFaceId}>
-                    Face ID Yoqish
+                    <Camera size={16} /> Face ID Yoqish
                 </button>
             </div>
 
