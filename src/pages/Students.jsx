@@ -21,6 +21,7 @@ const Students = () => {
         joinedAt: new Date().toISOString().split('T')[0]
     });
     const [modalAvatarUrl, setModalAvatarUrl] = useState(null);
+    const [pendingAvatarFile, setPendingAvatarFile] = useState(null);
     const [avatarUploading, setAvatarUploading] = useState(false);
 
     useEffect(() => {
@@ -49,6 +50,18 @@ const Students = () => {
         }
     };
 
+    const uploadAvatarFile = async (userId, file) => {
+        const formDataUpload = new FormData();
+        formDataUpload.append('avatar', file);
+        try {
+            await axiosClient.post(`/auth/avatar/${userId}`, formDataUpload, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Rasmni yuklashda xatolik yuz berdi.");
+        }
+    };
+
     const handleAddStudent = async (e) => {
         e.preventDefault();
         try {
@@ -56,7 +69,10 @@ const Students = () => {
                 await axiosClient.put(`/students/${editingId}`, formData);
                 toast.success("O'quvchi ma'lumotlari yangilandi!");
             } else {
-                await axiosClient.post('/students', formData);
+                const res = await axiosClient.post('/students', formData);
+                if (pendingAvatarFile) {
+                    await uploadAvatarFile(res.data.student.id, pendingAvatarFile);
+                }
                 toast.success("O'quvchi muvaffaqiyatli ro'yxatga olindi!");
             }
             closeModal();
@@ -86,14 +102,23 @@ const Students = () => {
         setEditingId(null);
         setFormData({ name: '', phone: '', password: '', groupIds: [], joinedAt: new Date().toISOString().split('T')[0] });
         setModalAvatarUrl(null);
+        setPendingAvatarFile(null);
     };
 
     const handleStudentAvatarUpload = async (e) => {
         const file = e.target.files?.[0];
-        if (!file || !editingId) return;
+        if (!file) return;
 
         if (!file.type.startsWith('image/')) {
             toast.error("Faqat rasm fayllarini tanlang.");
+            return;
+        }
+
+        // Yangi o'quvchi hali bazada yo'q (ID yo'q) - rasmni faqat mahalliy
+        // ko'rsatib turamiz, o'quvchi saqlangandan keyin avtomatik yuklanadi.
+        if (!isEditMode) {
+            setPendingAvatarFile(file);
+            setModalAvatarUrl(URL.createObjectURL(file));
             return;
         }
 
@@ -244,17 +269,15 @@ const Students = () => {
                             <button className="icon-btn-small" onClick={closeModal}><X size={20} /></button>
                         </div>
                         <form onSubmit={handleAddStudent}>
-                            {isEditMode && (
-                                <div className="mb-4 flex items-center gap-3">
-                                    <div className="student-row-avatar" style={{ width: 56, height: 56 }}>
-                                        {modalAvatarUrl ? <img src={modalAvatarUrl} alt="" /> : <User size={24} />}
-                                    </div>
-                                    <label className="btn btn-outline btn-sm" style={{ cursor: avatarUploading ? 'not-allowed' : 'pointer' }}>
-                                        <Camera size={14} /> {avatarUploading ? 'Yuklanmoqda...' : 'Rasm yuklash'}
-                                        <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleStudentAvatarUpload} disabled={avatarUploading} />
-                                    </label>
+                            <div className="mb-4 flex items-center gap-3">
+                                <div className="student-row-avatar" style={{ width: 56, height: 56 }}>
+                                    {modalAvatarUrl ? <img src={modalAvatarUrl} alt="" /> : <User size={24} />}
                                 </div>
-                            )}
+                                <label className="btn btn-outline btn-sm" style={{ cursor: avatarUploading ? 'not-allowed' : 'pointer' }}>
+                                    <Camera size={14} /> {avatarUploading ? 'Yuklanmoqda...' : 'Rasm tanlash'}
+                                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleStudentAvatarUpload} disabled={avatarUploading} />
+                                </label>
+                            </div>
                             <div className="mb-2">
                                 <label className="label">O'quvchi F.I.SH</label>
                                 <input
