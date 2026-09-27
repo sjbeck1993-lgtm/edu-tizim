@@ -10,10 +10,11 @@ const paymentController = {
                     student: { select: { name: true, phone: true } },
                     group: { select: { name: true } }
                 },
-                orderBy: { createdAt: 'desc' }
+                orderBy: { paymentDate: 'desc' }
             });
             res.json(payments);
         } catch (error) {
+            console.error("Get payments error:", error);
             res.status(500).json({ message: "To'lovlarni yuklashda xato" });
         }
     },
