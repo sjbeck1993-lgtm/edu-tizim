@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 :root {
   /* Brand */
   --primary-blue: #2563eb;
@@ -175,6 +177,18 @@ h2 {
 
 .text-sm {
   font-size: 0.875rem;
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.text-success {
+  color: var(--success);
+}
+
+.text-danger {
+  color: var(--danger);
 }
 
 .text-xs {
