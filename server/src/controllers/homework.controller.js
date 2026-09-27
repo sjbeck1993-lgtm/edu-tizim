@@ -51,7 +51,8 @@ exports.createTask = async (req, res) => {
                 groupId: parseInt(groupId),
                 deadline: deadline ? new Date(deadline) : new Date(Date.now() + 86400000 * 2), // 2 kun keyin
                 totalCount: group.students.length,
-                status: 'active'
+                status: 'active',
+                tenantId: req.user.tenantId
             }
         });
 

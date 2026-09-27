@@ -1,4 +1,6 @@
 const jwt = require('jsonwebtoken');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
@@ -8,12 +10,23 @@ const authenticateToken = (req, res, next) => {
         return res.status(401).json({ message: 'Ruxsat berilmagan! Token topilmadi.' });
     }
 
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
         if (err) {
             return res.status(403).json({ message: 'Token muddati tugagan yoki yaroqsiz.' });
         }
-        req.user = user;
-        next();
+
+        try {
+            // tenantId har doim bazadan yangilanadi — token eskirgan (tenant qo'shilishidan oldingi) bo'lsa ham to'g'ri ishlashi uchun
+            const user = await prisma.user.findUnique({
+                where: { id: decoded.id },
+                select: { tenantId: true }
+            });
+
+            req.user = { ...decoded, tenantId: user?.tenantId ?? null };
+            next();
+        } catch (dbError) {
+            next(dbError);
+        }
     });
 };
 

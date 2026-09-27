@@ -56,7 +56,8 @@ const startSubscriptionCron = () => {
                                 month: todayDateStr,
                                 periodStart: new Date(),
                                 method: '-',
-                                status: 'debt'
+                                status: 'debt',
+                                tenantId: student.tenantId
                             }
                         });
                         chargedCount++;

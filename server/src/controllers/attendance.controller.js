@@ -78,7 +78,8 @@ exports.saveAttendance = async (req, res) => {
             studentId: record.studentId,
             groupId: parseInt(groupId),
             present: record.present,
-            date: new Date()
+            date: new Date(),
+            tenantId: req.user.tenantId
         }));
 
         await prisma.attendance.createMany({

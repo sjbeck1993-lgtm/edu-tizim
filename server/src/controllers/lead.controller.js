@@ -20,7 +20,7 @@ const leadController = {
         try {
             const { name, course, phone, source } = req.body;
             const newLead = await prisma.lead.create({
-                data: { name, course, phone, source, status: 'NEW' }
+                data: { name, course, phone, source, status: 'NEW', tenantId: req.user.tenantId }
             });
             res.status(201).json({ message: "Yangi lid muvaffaqiyatli qo'shildi!", lead: newLead });
         } catch (error) {

@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcrypt');
 const prisma = new PrismaClient();
 
 const hrController = {
@@ -76,13 +77,16 @@ const hrController = {
         try {
             const { name, phone, password, subject, baseSalary, paymentPercentage } = req.body;
 
+            const hashedPassword = await bcrypt.hash(password || '123456', 10);
+
             // Create the teacher user and profile in a transaction
             const newTeacher = await prisma.user.create({
                 data: {
                     name,
                     phone,
-                    password: password || '123456', // simplified for demo
+                    password: hashedPassword,
                     role: 'TEACHER',
+                    tenantId: req.user.tenantId,
                     teacherProfile: {
                         create: {
                             subject: subject || 'Noma\'lum',
@@ -128,7 +132,7 @@ const hrController = {
 
             const updateData = { name, phone };
             if (password && password.trim() !== '') {
-                updateData.password = password; // simple demo, ideally hashed
+                updateData.password = await bcrypt.hash(password, 10);
             }
 
             const updatedTeacher = await prisma.user.update({
