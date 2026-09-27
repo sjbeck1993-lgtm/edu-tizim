@@ -88,15 +88,6 @@ const Login = () => {
                         {loading ? <span className="spinner-small"></span> : <><LogIn size={18} /> Kirish</>}
                     </button>
                 </form>
-
-                <div className="login-footer">
-                    <p>Demo kirishlar:</p>
-                    <div className="demo-creds">
-                        <span><b>Admin:</b> +998901234567 / admin123</span>
-                        <span><b>Ustoz:</b> +998991112233 / teacher123</span>
-                        <span><b>O'quvchi:</b> +998900010001 / student123</span>
-                    </div>
-                </div>
             </div>
         </div>
     );
