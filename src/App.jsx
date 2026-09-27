@@ -11,6 +11,7 @@ import Attendance from './pages/Attendance';
 import Homework from './pages/Homework';
 import StudentStats from './pages/StudentStats';
 import AIAnalyst from './pages/AIAnalyst';
+import Settings from './pages/Settings';
 import Login from './pages/Login';
 import PrivateRoute from './components/Auth/PrivateRoute';
 import { Toaster } from 'react-hot-toast';
@@ -43,7 +44,7 @@ function App() {
             {/* Students & Parents Route */}
             <Route path="student-app" element={<StudentStats />} />
 
-            <Route path="settings" element={<div className="p-4">Sozlamalar (Tez Kunda)</div>} />
+            <Route path="settings" element={<Settings />} />
           </Route>
         </Route>
       </Routes>
