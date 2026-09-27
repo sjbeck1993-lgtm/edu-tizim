@@ -13,6 +13,7 @@ const HR = () => {
     const [editingId, setEditingId] = useState(null);
     const [formData, setFormData] = useState({ name: '', phone: '', password: '', subject: '', paymentPercentage: '' });
     const [modalAvatarUrl, setModalAvatarUrl] = useState(null);
+    const [pendingAvatarFile, setPendingAvatarFile] = useState(null);
     const [avatarUploading, setAvatarUploading] = useState(false);
 
     useEffect(() => {
@@ -100,14 +101,23 @@ const HR = () => {
         setEditingId(null);
         setFormData({ name: '', phone: '', password: '', subject: '', paymentPercentage: '' });
         setModalAvatarUrl(null);
+        setPendingAvatarFile(null);
     };
 
     const handleTeacherAvatarUpload = async (e) => {
         const file = e.target.files?.[0];
-        if (!file || !editingId) return;
+        if (!file) return;
 
         if (!file.type.startsWith('image/')) {
             toast.error("Faqat rasm fayllarini tanlang.");
+            return;
+        }
+
+        // Yangi o'qituvchi hali bazada yo'q (ID yo'q) - rasmni faqat mahalliy
+        // ko'rsatib turamiz, o'qituvchi saqlangandan keyin avtomatik yuklanadi.
+        if (!isEditMode) {
+            setPendingAvatarFile(file);
+            setModalAvatarUrl(URL.createObjectURL(file));
             return;
         }
 
@@ -129,6 +139,18 @@ const HR = () => {
         }
     };
 
+    const uploadAvatarFile = async (userId, file) => {
+        const formDataUpload = new FormData();
+        formDataUpload.append('avatar', file);
+        try {
+            await axiosClient.post(`/auth/avatar/${userId}`, formDataUpload, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Rasmni yuklashda xatolik yuz berdi.");
+        }
+    };
+
     const handleAddTeacher = async (e) => {
         e.preventDefault();
         try {
@@ -136,7 +158,10 @@ const HR = () => {
                 await axiosClient.put(`/hr/teachers/${editingId}`, formData);
                 toast.success("O'qituvchi ma'lumotlari yangilandi!");
             } else {
-                await axiosClient.post('/hr/teachers', formData);
+                const res = await axiosClient.post('/hr/teachers', formData);
+                if (pendingAvatarFile) {
+                    await uploadAvatarFile(res.data.teacher.id, pendingAvatarFile);
+                }
                 toast.success("Yangi o'qituvchi muvaffaqiyatli saqlandi!");
             }
             closeModal();
@@ -306,17 +331,15 @@ const HR = () => {
                             <button className="icon-btn-small" onClick={closeModal}><X size={20} /></button>
                         </div>
                         <form onSubmit={handleAddTeacher}>
-                            {isEditMode && (
-                                <div className="mb-4 flex items-center gap-3">
-                                    <div className="teacher-avatar" style={{ width: 56, height: 56 }}>
-                                        {modalAvatarUrl ? <img src={modalAvatarUrl} alt="" /> : <User size={24} />}
-                                    </div>
-                                    <label className="btn btn-outline btn-sm" style={{ cursor: avatarUploading ? 'not-allowed' : 'pointer' }}>
-                                        <Camera size={14} /> {avatarUploading ? 'Yuklanmoqda...' : 'Rasm yuklash'}
-                                        <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleTeacherAvatarUpload} disabled={avatarUploading} />
-                                    </label>
+                            <div className="mb-4 flex items-center gap-3">
+                                <div className="teacher-avatar" style={{ width: 56, height: 56 }}>
+                                    {modalAvatarUrl ? <img src={modalAvatarUrl} alt="" /> : <User size={24} />}
                                 </div>
-                            )}
+                                <label className="btn btn-outline btn-sm" style={{ cursor: avatarUploading ? 'not-allowed' : 'pointer' }}>
+                                    <Camera size={14} /> {avatarUploading ? 'Yuklanmoqda...' : 'Rasm tanlash'}
+                                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleTeacherAvatarUpload} disabled={avatarUploading} />
+                                </label>
+                            </div>
                             <div className="mb-2">
                                 <label className="label">Ism familiya</label>
                                 <input type="text" className="input-field" placeholder="Masalan: Sardor Aliyev"
