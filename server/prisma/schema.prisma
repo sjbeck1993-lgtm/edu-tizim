@@ -7,6 +7,24 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Tenant {
+  id        Int      @id @default(autoincrement())
+  name      String
+  slug      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  users       User[]
+  courses     Course[]
+  groups      Group[]
+  leads       Lead[]
+  payments    Payment[]
+  debts       Debt[]
+  attendances Attendance[]
+  tasks       Task[]
+  materials   Material[]
+}
+
 model User {
   id             Int             @id @default(autoincrement())
   name           String
@@ -14,8 +32,10 @@ model User {
   password       String
   role           Role            @default(STUDENT)
   telegramId     String?
+  tenantId       Int?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
+  tenant         Tenant?         @relation(fields: [tenantId], references: [id])
   attendances    Attendance[]
   groupsTaught   Group[]         @relation("TeacherGroups")
   payments       Payment[]
@@ -37,14 +57,14 @@ model TeacherProfile {
 }
 
 model StudentProfile {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @unique
-  level     Int      @default(1)
-  coins     Int      @default(0)
-  joinedAt  DateTime @default(now())
+  id        Int       @id @default(autoincrement())
+  userId    Int       @unique
+  level     Int       @default(1)
+  coins     Int       @default(0)
+  joinedAt  DateTime  @default(now())
   subEndsAt DateTime?
   groups    Group[]
-  user      User     @relation(fields: [userId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
 }
 
 model Lead {
@@ -55,7 +75,10 @@ model Lead {
   source    String
   status    LeadStatus @default(NEW)
   reason    String?
+  tenantId  Int?
   createdAt DateTime   @default(now())
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
 }
 
 model Course {
@@ -63,41 +86,48 @@ model Course {
   name         String
   monthlyPrice Float
   description  String?
+  tenantId     Int?
   groups       Group[]
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
 }
 
 model Group {
-  id              Int              @id @default(autoincrement())
-  name            String
-  courseId        Int
-  teacherId       Int
-  schedule        String           
-  classDays       Int[]            
-  classTime       String?          
-  telegramChatId  String?          
-  attendances     Attendance[]
-  debts           Debt[]
-  payments        Payment[]
-  course          Course           @relation(fields: [courseId], references: [id])
-  teacher         User             @relation("TeacherGroups", fields: [teacherId], references: [id])
-  students        StudentProfile[]
-  tasks           Task[]
+  id             Int              @id @default(autoincrement())
+  name           String
+  courseId       Int
+  teacherId      Int
+  schedule       String
+  classDays      Int[]
+  classTime      String?
+  telegramChatId String?
+  tenantId       Int?
+  attendances    Attendance[]
+  debts          Debt[]
+  payments       Payment[]
+  course         Course           @relation(fields: [courseId], references: [id])
+  teacher        User             @relation("TeacherGroups", fields: [teacherId], references: [id])
+  tenant         Tenant?          @relation(fields: [tenantId], references: [id])
+  students       StudentProfile[]
+  tasks          Task[]
 }
 
 model Payment {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   studentId   Int
   groupId     Int?
   amount      Float
-  paymentDate DateTime @default(now())
+  paymentDate DateTime  @default(now())
   periodStart DateTime?
   month       String
-  status      String   @default("paid")
+  status      String    @default("paid")
   method      String
   receiptUrl  String?
+  tenantId    Int?
 
-  student User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  group   Group? @relation(fields: [groupId], references: [id])
+  student User    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  group   Group?  @relation(fields: [groupId], references: [id])
+  tenant  Tenant? @relation(fields: [tenantId], references: [id])
 }
 
 model Debt {
@@ -107,10 +137,12 @@ model Debt {
   amount    Float
   month     String
   status    String   @default("UNPAID")
+  tenantId  Int?
   createdAt DateTime @default(now())
 
-  student   User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  group     Group? @relation(fields: [groupId], references: [id])
+  student User    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  group   Group?  @relation(fields: [groupId], references: [id])
+  tenant  Tenant? @relation(fields: [tenantId], references: [id])
 }
 
 model Attendance {
@@ -119,8 +151,10 @@ model Attendance {
   groupId   Int
   date      DateTime @default(now())
   present   Boolean  @default(true)
+  tenantId  Int?
   group     Group    @relation(fields: [groupId], references: [id])
   student   User     @relation(fields: [studentId], references: [id])
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id])
 }
 
 enum Role {
@@ -144,7 +178,9 @@ model Task {
   totalCount  Int          @default(0)
   createdAt   DateTime     @default(now())
   status      String       @default("active")
+  tenantId    Int?
   group       Group        @relation(fields: [groupId], references: [id])
+  tenant      Tenant?      @relation(fields: [tenantId], references: [id])
   submissions Submission[]
 }
 
@@ -166,5 +202,8 @@ model Material {
   size      String
   courseId  Int?
   groupId   Int?
+  tenantId  Int?
   createdAt DateTime @default(now())
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
 }
