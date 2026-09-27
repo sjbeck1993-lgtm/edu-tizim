@@ -144,7 +144,7 @@ const Dashboard = () => {
                 <div className="chart-card">
                     <div className="chart-header">
                         <h3 className="chart-title">Moliya dinamikasi (Mln UZS)</h3>
-                        <button className="icon-btn" onClick={() => handleViewAll('Moliya dinamikasi')}>Barchasi</button>
+                        <button className="chart-link-btn" onClick={() => handleViewAll('Moliya dinamikasi')}>Barchasi</button>
                     </div>
                     <div className="chart-container">
                         <ResponsiveContainer width="100%" height="100%">
@@ -170,7 +170,7 @@ const Dashboard = () => {
                 <div className="chart-card">
                     <div className="chart-header">
                         <h3 className="chart-title">Haftalik Davomat</h3>
-                        <button className="icon-btn" onClick={() => handleViewAll('Haftalik Davomat')}>Barchasi</button>
+                        <button className="chart-link-btn" onClick={() => handleViewAll('Haftalik Davomat')}>Barchasi</button>
                     </div>
                     <div className="chart-container">
                         <ResponsiveContainer width="100%" height="100%">
