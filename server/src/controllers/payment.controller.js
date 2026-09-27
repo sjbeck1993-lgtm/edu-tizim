@@ -40,7 +40,8 @@ const paymentController = {
                     amount: parsedAmount,
                     month,
                     method,
-                    status: status || 'paid'
+                    status: status || 'paid',
+                    tenantId: req.user.tenantId
                 }
             });
 

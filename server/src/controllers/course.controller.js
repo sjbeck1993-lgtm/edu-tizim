@@ -34,7 +34,8 @@ const courseController = {
                 data: {
                     name,
                     monthlyPrice: parseFloat(monthlyPrice) || 0,
-                    description: description || ""
+                    description: description || "",
+                    tenantId: req.user.tenantId
                 }
             });
             res.status(201).json(newCourse);
@@ -78,7 +79,8 @@ const courseController = {
                     schedule: schedule || "",
                     classDays: classDays || [],
                     classTime: classTime || "",
-                    telegramChatId: telegramChatId || null
+                    telegramChatId: telegramChatId || null,
+                    tenantId: req.user.tenantId
                 }
             });
             res.status(201).json(newGroup);
@@ -139,7 +141,8 @@ const courseController = {
                     type,
                     courseId: courseId ? parseInt(courseId) : null,
                     groupId: groupId ? parseInt(groupId) : null,
-                    size: "Noma'lum"
+                    size: "Noma'lum",
+                    tenantId: req.user.tenantId
                 }
             });
             res.status(201).json(newMaterial);

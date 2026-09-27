@@ -114,6 +114,7 @@ exports.createStudent = async (req, res) => {
                 phone,
                 password: hashedPassword,
                 role: 'STUDENT',
+                tenantId: req.user.tenantId,
                 studentProfile: {
                     create: {
                         groups: groupConnect,
@@ -143,7 +144,8 @@ exports.createStudent = async (req, res) => {
                                 groupId: group.id,
                                 amount: group.course.monthlyPrice,
                                 month: formattedDate,
-                                status: 'UNPAID'
+                                status: 'UNPAID',
+                                tenantId: req.user.tenantId
                             }
                         });
                     }
@@ -223,7 +225,8 @@ exports.updateStudent = async (req, res) => {
                                     groupId: group.id,
                                     amount: group.course.monthlyPrice,
                                     month: formattedDate,
-                                    status: 'UNPAID'
+                                    status: 'UNPAID',
+                                    tenantId: req.user.tenantId
                                 }
                             });
                         }
