@@ -68,4 +68,13 @@ if (bot) {
     bot.on('polling_error', (error) => {
         console.log("Bot xatosi: ", error.message);  // avoid crash on timeout
     });
+
+    // Jarayon to'xtatilganda (nodemon qayta ishga tushirganda yoki deploy vaqtida)
+    // pollingni to'xtatmasak, eski jarayon Telegram bilan ulanishni ushlab qolib,
+    // yangi jarayon bilan "409 Conflict: terminated by other getUpdates request" xatosiga olib keladi.
+    const shutdown = () => {
+        bot.stopPolling().finally(() => process.exit(0));
+    };
+    process.once('SIGINT', shutdown);
+    process.once('SIGTERM', shutdown);
 }

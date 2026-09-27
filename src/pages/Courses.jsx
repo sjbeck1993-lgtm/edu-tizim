@@ -498,7 +498,7 @@ const Courses = () => {
                                 value={groupData.telegramChatId || ''}
                                 onChange={(e) => setGroupData({ ...groupData, telegramChatId: e.target.value })}
                             />
-                            <small style={{color: '#666'}}>* Ushbu guruh uchun maxsus Telegram guruh ID sini kiriting. Bo'sh qolsa umumiyga yuboriladi.</small>
+                            <small style={{color: '#666'}}>* Majburiy: shu ID kiritilmasa, ushbu guruhning qarzdorlik xabarnomalari HECH QAYERGA yuborilmaydi.</small>
                         </div>        <p className="text-xs text-gray-500 mt-2 text-right">Preview: <span className="font-semibold text-gray-700">{buildScheduleString(groupData.classDays, groupData.classTime)}</span></p>
                             </div>
                             <div className="flex gap-2 justify-end mt-4">

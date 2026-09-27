@@ -105,7 +105,12 @@ const paymentController = {
                 });
 
                 if (type === 'bulk') {
+                    if (!botToken) {
+                        return res.status(500).json({ message: "TELEGRAM_BOT_TOKEN sozlanmagan! Serverga murojaat qiling." });
+                    }
+
                     const groupedDebts = {};
+                    const skippedGroups = new Set();
                     debtStudents.forEach(d => {
                         const targetId = d.group?.telegramChatId;
                         if (targetId) {
@@ -113,9 +118,13 @@ const paymentController = {
                                 groupedDebts[targetId] = { name: d.group.name, students: [] };
                             }
                             groupedDebts[targetId].students.push(d);
+                        } else if (d.group?.name) {
+                            skippedGroups.add(d.group.name);
                         }
                     });
 
+                    let sentGroups = 0;
+                    const failedGroups = [];
                     for (const [chatId, data] of Object.entries(groupedDebts)) {
                         let msg = `⚠️ <b>${data.name.toUpperCase()} GURUHI: QARZDORLIK!</b>\n\n`;
                         let total = 0;
@@ -124,22 +133,55 @@ const paymentController = {
                             total += s.amount;
                         });
                         msg += `\n🔴 Jami: <b>${total} so'm</b>`;
-                        await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, { chat_id: chatId, text: msg, parse_mode: 'HTML' });
+                        try {
+                            await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, { chat_id: chatId, text: msg, parse_mode: 'HTML' });
+                            sentGroups++;
+                        } catch (sendError) {
+                            console.error(`Telegram sendMessage xatosi (guruh: ${data.name}, chatId: ${chatId}):`, sendError.response?.data || sendError.message);
+                            failedGroups.push(data.name);
+                        }
                     }
-                    return res.json({ message: "Guruhlarga xabarlar yuborildi!" });
-                } 
+
+                    if (sentGroups === 0) {
+                        return res.status(400).json({
+                            message: failedGroups.length > 0
+                                ? `Hech qaysi guruhga xabar yuborilmadi. Xatolik: ${failedGroups.join(', ')} (botni guruhga admin qilib qo'shganingizni tekshiring).`
+                                : `Hech qaysi guruhda Telegram Chat ID sozlanmagan (${[...skippedGroups].join(', ') || 'guruhlar'}). "Kurslar" bo'limida guruh sozlamalaridan Telegram Chat ID kiriting.`
+                        });
+                    }
+
+                    let message = `${sentGroups} ta guruhga xabar yuborildi.`;
+                    if (skippedGroups.size > 0) message += ` ${skippedGroups.size} ta guruhda Chat ID sozlanmagani uchun o'tkazib yuborildi (${[...skippedGroups].join(', ')}).`;
+                    if (failedGroups.length > 0) message += ` ${failedGroups.length} ta guruhga yuborishda xatolik chiqdi (${failedGroups.join(', ')}).`;
+                    return res.json({ message });
+                }
                 
                 if (type === 'bulk-private') {
+                    if (!botToken) {
+                        return res.status(500).json({ message: "TELEGRAM_BOT_TOKEN sozlanmagan! Serverga murojaat qiling." });
+                    }
+
                     let sent = 0;
+                    let failed = 0;
+                    const notLinked = debtStudents.filter(d => !d.student.telegramId).length;
                     for (const d of debtStudents) {
                         const tid = d.student.telegramId;
                         if (tid) {
                             const msg = `🔔 <b>TO'LOV ESLATMASI:</b>\n\nHurmatli <b>${d.student.name}</b>, sizning <b>${d.group?.name}</b> kursi uchun <b>${d.amount}</b> so'm qarzdorligingiz mavjud.`;
-                            await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, { chat_id: tid, text: msg, parse_mode: 'HTML' });
-                            sent++;
+                            try {
+                                await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, { chat_id: tid, text: msg, parse_mode: 'HTML' });
+                                sent++;
+                            } catch (sendError) {
+                                console.error(`Telegram sendMessage xatosi (o'quvchi: ${d.student.name}, telegramId: ${tid}):`, sendError.response?.data || sendError.message);
+                                failed++;
+                            }
                         }
                     }
-                    return res.json({ message: `${sent} kishiga shaxsiy xabar yuborildi.` });
+
+                    let message = `${sent} kishiga shaxsiy xabar yuborildi.`;
+                    if (notLinked > 0) message += ` ${notLinked} kishi botga ulanmagan (Telegramda /start bosmagan).`;
+                    if (failed > 0) message += ` ${failed} kishiga yuborishda xatolik chiqdi.`;
+                    return res.json({ message });
                 }
             } else {
                 // Single SMS
@@ -156,7 +198,7 @@ const paymentController = {
                 return res.json({ message: "Xabar yuborildi!" });
             }
         } catch (error) {
-            console.error(error);
+            console.error("Telegram sendMessage xatosi:", error.response?.data || error.message);
             res.status(500).json({ message: "Telegram xatosi" });
         }
     },
