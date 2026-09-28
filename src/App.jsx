@@ -10,6 +10,7 @@ import Courses from './pages/Courses';
 import Attendance from './pages/Attendance';
 import Homework from './pages/Homework';
 import StudentStats from './pages/StudentStats';
+import StudentHomeworkTask from './pages/StudentHomeworkTask';
 import AIAnalyst from './pages/AIAnalyst';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
@@ -43,6 +44,7 @@ function App() {
 
             {/* Students & Parents Route */}
             <Route path="student-app" element={<StudentStats />} />
+            <Route path="student-app/homework/:taskId" element={<StudentHomeworkTask />} />
 
             <Route path="settings" element={<Settings />} />
           </Route>

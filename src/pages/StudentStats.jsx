@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Award, Target, TrendingUp, BookOpen, Clock, Calendar, UploadCloud, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Award, Target, TrendingUp, BookOpen, Clock, Calendar, UploadCloud, X, ClipboardList, ArrowRight } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import toast from 'react-hot-toast';
 import axiosClient from '../api/axiosClient';
@@ -15,8 +16,10 @@ const performanceData = [
 ];
 
 const StudentStats = () => {
+    const navigate = useNavigate();
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [myTasks, setMyTasks] = useState([]);
 
     // Payment upload states
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -34,7 +37,16 @@ const StudentStats = () => {
                 setLoading(false);
             }
         };
+        const fetchMyTasks = async () => {
+            try {
+                const res = await axiosClient.get('/homework/mine');
+                setMyTasks(res.data);
+            } catch (error) {
+                console.error("Tasks load err:", error);
+            }
+        };
         fetchProfile();
+        fetchMyTasks();
     }, []);
 
     const handleUploadPayment = async (e) => {
@@ -137,6 +149,30 @@ const StudentStats = () => {
                             <span className="stat-label-m">Davomat</span>
                         </div>
                     </div>
+                </div>
+
+                <h3 className="section-title-mobile mt-4">Vazifalarim</h3>
+                <div className="subject-list">
+                    {myTasks.length === 0 ? (
+                        <div className="p-4 text-center text-muted border border-dashed rounded-lg">Hozircha vazifalar yo'q.</div>
+                    ) : myTasks.map(task => (
+                        <div key={task.id} className="subject-item">
+                            <div className="subject-icon"><ClipboardList size={18} /></div>
+                            <div className="subject-info">
+                                <h4>{task.title}</h4>
+                                <p>{task.group} • {new Date(task.deadline).toLocaleDateString()}</p>
+                            </div>
+                            {task.status === 'pending' ? (
+                                <button className="btn btn-sm btn-primary" onClick={() => navigate(`/student-app/homework/${task.id}`)}>
+                                    Boshlash <ArrowRight size={14} />
+                                </button>
+                            ) : task.status === 'submitted' ? (
+                                <div className="subject-score warning">Tekshirilmoqda</div>
+                            ) : (
+                                <div className={`subject-score ${task.score >= 60 ? 'excellent' : 'warning'}`}>{task.score} ball</div>
+                            )}
+                        </div>
+                    ))}
                 </div>
 
                 <h3 className="section-title-mobile mt-4">Rivojlanish grafigi</h3>

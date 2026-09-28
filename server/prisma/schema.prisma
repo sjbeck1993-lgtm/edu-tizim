@@ -183,17 +183,44 @@ model Task {
   group       Group        @relation(fields: [groupId], references: [id])
   tenant      Tenant?      @relation(fields: [tenantId], references: [id])
   submissions Submission[]
+  questions   Question[]
+}
+
+model Question {
+  id            Int             @id @default(autoincrement())
+  taskId        Int
+  type          String          // MULTIPLE_CHOICE | NUMERIC | TEXT
+  text          String
+  options       Json?
+  correctAnswer String?
+  order         Int             @default(0)
+  task          Task            @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  answers       StudentAnswer[]
 }
 
 model Submission {
-  id        Int      @id @default(autoincrement())
-  taskId    Int
-  studentId Int
-  score     Int?
-  status    String   @default("pending")
-  createdAt DateTime @default(now())
-  student   User     @relation(fields: [studentId], references: [id])
-  task      Task     @relation(fields: [taskId], references: [id])
+  id          Int             @id @default(autoincrement())
+  taskId      Int
+  studentId   Int
+  score       Int?
+  status      String          @default("pending")
+  createdAt   DateTime        @default(now())
+  submittedAt DateTime?
+  student     User            @relation(fields: [studentId], references: [id])
+  task        Task            @relation(fields: [taskId], references: [id])
+  answers     StudentAnswer[]
+}
+
+model StudentAnswer {
+  id           Int        @id @default(autoincrement())
+  submissionId Int
+  questionId   Int
+  answerText   String?
+  isCorrect    Boolean?
+  aiScore      Int?
+  aiFeedback   String?
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  question     Question   @relation(fields: [questionId], references: [id])
 }
 
 model Material {

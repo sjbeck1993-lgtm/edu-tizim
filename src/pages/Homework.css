@@ -289,36 +289,6 @@
     font-weight: 500;
 }
 
-.ai-insight-box {
-    margin: 1.5rem;
-    padding: 1.25rem;
-    border-radius: 0.75rem;
-    background: linear-gradient(to right, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.1));
-    border: 1px solid rgba(139, 92, 246, 0.2);
-    display: flex;
-    gap: 1rem;
-    align-items: flex-start;
-}
-
-.insight-icon {
-    color: #8b5cf6;
-    margin-top: 0.2rem;
-}
-
-.insight-title {
-    font-size: 0.9rem;
-    font-weight: 700;
-    color: #6d28d9;
-    margin: 0 0 0.4rem 0;
-}
-
-.insight-text {
-    font-size: 0.85rem;
-    color: var(--text-main);
-    line-height: 1.5;
-    margin: 0;
-}
-
 @media (max-width: 1024px) {
     .homework-grid {
         grid-template-columns: 1fr;
