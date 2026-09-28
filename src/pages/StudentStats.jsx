@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Award, Target, TrendingUp, BookOpen, Clock, Calendar, UploadCloud, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import toast from 'react-hot-toast';
 import axiosClient from '../api/axiosClient';
-import axios from 'axios';
 import './StudentStats.css';
 
 const performanceData = [
@@ -51,12 +51,8 @@ const StudentStats = () => {
 
         setUploading(true);
         try {
-            const token = localStorage.getItem('token');
-            await axios.post('http://localhost:5000/api/payments/upload', formData, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                    // Axios will automatically set Content-Type to multipart/form-data with the correct boundary
-                }
+            await axiosClient.post('/payments/upload', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
             });
             toast.success("To'lov tekshirish uchun yuborildi!", { icon: '✅' });
             setIsPaymentModalOpen(false);

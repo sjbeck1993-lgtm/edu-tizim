@@ -29,7 +29,9 @@ const Courses = () => {
     // Form state
     const [formData, setFormData] = useState({ name: '', monthlyPrice: '' });
     const [groupData, setGroupData] = useState({ id: null, courseId: '', name: '', teacherId: '', schedule: '', classDays: [], classTime: '', telegramChatId: '' });
-    const [materialData, setMaterialData] = useState({ name: '', type: 'document', courseId: '' });
+    const [materialData, setMaterialData] = useState({ name: '', type: 'document', courseId: '', externalUrl: '' });
+    const [materialFile, setMaterialFile] = useState(null);
+    const [materialUploading, setMaterialUploading] = useState(false);
 
     const WEEK_DAYS = [
         { value: 1, label: 'Du' },
@@ -249,14 +251,41 @@ const Courses = () => {
 
     const saveUpload = async (e) => {
         e.preventDefault();
+
+        if (materialData.type === 'video') {
+            if (!materialData.externalUrl) {
+                toast.error("Video uchun havola (link) kiriting");
+                return;
+            }
+        } else if (materialData.type !== 'folder' && !materialFile) {
+            toast.error("Iltimos, fayl tanlang");
+            return;
+        }
+
+        const payload = new FormData();
+        payload.append('name', materialData.name);
+        payload.append('type', materialData.type);
+        payload.append('courseId', materialData.courseId);
+        if (materialData.type === 'video') {
+            payload.append('externalUrl', materialData.externalUrl);
+        } else if (materialFile) {
+            payload.append('file', materialFile);
+        }
+
+        setMaterialUploading(true);
         try {
-            await axiosClient.post('/courses/materials/upload', materialData);
+            await axiosClient.post('/courses/materials/upload', payload, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
             toast.success("Material muvaffaqiyatli yuklandi!", { icon: '⬆️' });
             setIsUploadModalOpen(false);
-            setMaterialData(prev => ({ ...prev, name: '' }));
+            setMaterialData(prev => ({ ...prev, name: '', externalUrl: '' }));
+            setMaterialFile(null);
             fetchMaterials();
         } catch (error) {
-            toast.error("Yuklashda xato yuz berdi");
+            toast.error(error.response?.data?.message || "Yuklashda xato yuz berdi");
+        } finally {
+            setMaterialUploading(false);
         }
     };
 
@@ -271,8 +300,12 @@ const Courses = () => {
         }
     };
 
-    const handleOpenFolder = (name) => {
-        toast(`"${name}" ochilmoqda...`, { icon: '📂' });
+    const handleOpenMaterial = (material) => {
+        if (material.type === 'folder' || !material.fileUrl) {
+            toast("Bu papkada hozircha ochish uchun fayl yo'q", { icon: '📂' });
+            return;
+        }
+        window.open(material.fileUrl, '_blank');
     };
 
     const openGroupDetails = (course) => {
@@ -360,7 +393,7 @@ const Courses = () => {
                     <div className="upload-zone" onClick={() => setIsUploadModalOpen(true)}>
                         <Upload size={32} className="upload-icon" />
                         <p className="upload-text">Fayllarni shu yerga tashlang yoki <b>kompyuterdan tanlang</b></p>
-                        <p className="upload-hint">PDF, PPTX, DOCX, MP4 (Maks: 500MB)</p>
+                        <p className="upload-hint">PDF, PPTX, DOCX (Maks: 8MB). Video uchun havola (link) qo'shing.</p>
                     </div>
 
                     <h3 className="section-title mt-6">Mening fayllarim</h3>
@@ -377,7 +410,7 @@ const Courses = () => {
                                     </p>
                                 </div>
                                 <div className="material-actions">
-                                    <button className="btn btn-sm btn-outline" onClick={() => handleOpenFolder(material.name)}><Folder size={14} /> Ochish</button>
+                                    <button className="btn btn-sm btn-outline" onClick={() => handleOpenMaterial(material)}><Folder size={14} /> Ochish</button>
                                     <button className="icon-btn-small text-danger" onClick={() => handleDeleteMaterial(material.id)}><Trash2 size={18} /></button>
                                 </div>
                             </div>
@@ -538,14 +571,35 @@ const Courses = () => {
                                 >
                                     <option value="document">Hujjat (PDF/Doc)</option>
                                     <option value="presentation">Prezentatsiya (PPTX)</option>
-                                    <option value="video">Video Dars (MP4)</option>
-                                    <option value="folder">Papka</option>
+                                    <option value="video">Video Dars (Havola/Link)</option>
+                                    <option value="folder">Papka (faylsiz, tashkiliy)</option>
                                 </select>
                             </div>
-                            <div className="mb-4">
-                                <label className="label">Fayl tanlang (Mock)</label>
-                                <input type="file" className="input-field" required />
-                            </div>
+                            {materialData.type === 'video' ? (
+                                <div className="mb-4">
+                                    <label className="label">Video havolasi (YouTube, Telegram va h.k.)</label>
+                                    <input
+                                        key="video-url-input"
+                                        type="url"
+                                        className="input-field"
+                                        placeholder="https://youtube.com/..."
+                                        value={materialData.externalUrl}
+                                        onChange={e => setMaterialData({ ...materialData, externalUrl: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                            ) : materialData.type !== 'folder' && (
+                                <div className="mb-4">
+                                    <label className="label">Fayl tanlang (Maks: 8MB)</label>
+                                    <input
+                                        key="material-file-input"
+                                        type="file"
+                                        className="input-field"
+                                        onChange={e => setMaterialFile(e.target.files?.[0] || null)}
+                                        required
+                                    />
+                                </div>
+                            )}
                             <div className="mb-4">
                                 <label className="label">Qaysi kurs yoki guruhga?</label>
                                 <select
@@ -561,7 +615,7 @@ const Courses = () => {
                             </div>
                             <div className="flex gap-2 justify-end mt-4">
                                 <button type="button" className="btn btn-outline" onClick={() => setIsUploadModalOpen(false)}><X size={16} /> Bekor qilish</button>
-                                <button type="submit" className="btn btn-primary"><Upload size={16} /> Yuklash</button>
+                                <button type="submit" className="btn btn-primary" disabled={materialUploading}><Upload size={16} /> {materialUploading ? 'Yuklanmoqda...' : 'Yuklash'}</button>
                             </div>
                         </form>
                     </div>

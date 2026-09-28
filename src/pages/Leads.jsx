@@ -8,7 +8,11 @@ const Leads = () => {
     const [leads, setLeads] = useState({ new: [], thinking: [], rejected: [] });
     const [searchQuery, setSearchQuery] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [courseFilter, setCourseFilter] = useState('Barchasi');
+    const [sourceFilter, setSourceFilter] = useState('Barchasi');
     const [loading, setLoading] = useState(true);
+    const [viewingLead, setViewingLead] = useState(null);
 
     // Form states
     const [courses, setCourses] = useState([]);
@@ -50,17 +54,25 @@ const Leads = () => {
         }
     };
 
-    const handlePhone = (name) => {
-        toast.success(`${name} ga qo'ng'iroq qilinmoqda...`, { icon: '📞' });
+    const handlePhone = (phone) => {
+        window.location.href = `tel:${phone}`;
     };
 
-    const handleMsg = (name) => {
-        toast.success(`${name} ga xabar yuborilmoqda...`, { icon: '💬' });
+    const handleMsg = (phone) => {
+        window.location.href = `sms:${phone}`;
     };
 
     const handleFilter = () => {
-        toast('Filtr menyusi tez orada!', { icon: '⚙️' });
+        setIsFilterOpen(prev => !prev);
     };
+
+    const clearFilters = () => {
+        setCourseFilter('Barchasi');
+        setSourceFilter('Barchasi');
+    };
+
+    const allLeadsFlat = [...leads.new, ...leads.thinking, ...leads.rejected];
+    const uniqueSources = [...new Set(allLeadsFlat.map(l => l.source).filter(Boolean))];
 
     const handleStatusChange = async (id, newStatus, currentStatus) => {
         if (newStatus === currentStatus) return;
@@ -112,10 +124,13 @@ const Leads = () => {
     };
 
     const filterLeads = (leadArray) => {
-        return leadArray.filter(lead =>
-            lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            lead.course.toLowerCase().includes(searchQuery.toLowerCase())
-        );
+        return leadArray.filter(lead => {
+            const matchesSearch = lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                lead.course.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesCourse = courseFilter === 'Barchasi' || lead.course === courseFilter;
+            const matchesSource = sourceFilter === 'Barchasi' || lead.source === sourceFilter;
+            return matchesSearch && matchesCourse && matchesSource;
+        });
     };
 
     const renderLeadCard = (lead, type) => (
@@ -136,7 +151,7 @@ const Leads = () => {
                     <button className="icon-btn-small text-danger" title="O'chirish" onClick={() => handleDeleteLead(lead.id, lead.name)}>
                         <Trash2 size={16} />
                     </button>
-                    <button className="icon-btn-small" onClick={() => toast('Batafsil ma\'lumotlar joriy etilmoqda')}><MoreHorizontal size={16} /></button>
+                    <button className="icon-btn-small" onClick={() => setViewingLead(lead)}><MoreHorizontal size={16} /></button>
                 </div>
             </div>
             <div className="lead-course">{lead.course}</div>
@@ -147,10 +162,10 @@ const Leads = () => {
 
             {type !== 'rejected' && (
                 <div className="lead-actions">
-                    <button className="lead-action-btn phone" onClick={() => handlePhone(lead.name)}>
+                    <button className="lead-action-btn phone" onClick={() => handlePhone(lead.phone)}>
                         <Phone size={14} /> Qo'ng'iroq
                     </button>
-                    <button className="lead-action-btn msg" onClick={() => handleMsg(lead.name)}>
+                    <button className="lead-action-btn msg" onClick={() => handleMsg(lead.phone)}>
                         <MessageCircle size={14} /> Xabar
                     </button>
                 </div>
@@ -181,9 +196,30 @@ const Leads = () => {
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
-                    <button className="btn btn-outline" onClick={handleFilter}>
-                        <Filter size={18} /> Filtr
-                    </button>
+                    <div style={{ position: 'relative' }}>
+                        <button className="btn btn-outline" onClick={handleFilter}>
+                            <Filter size={18} /> Filtr {(courseFilter !== 'Barchasi' || sourceFilter !== 'Barchasi') && '•'}
+                        </button>
+                        {isFilterOpen && (
+                            <div className="card" style={{ position: 'absolute', top: '110%', right: 0, zIndex: 20, width: '240px', padding: '1rem' }}>
+                                <div className="mb-2">
+                                    <label className="label">Kurs bo'yicha</label>
+                                    <select className="input-field" value={courseFilter} onChange={e => setCourseFilter(e.target.value)}>
+                                        <option value="Barchasi">Barchasi</option>
+                                        {courses.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                                    </select>
+                                </div>
+                                <div className="mb-2">
+                                    <label className="label">Manba bo'yicha</label>
+                                    <select className="input-field" value={sourceFilter} onChange={e => setSourceFilter(e.target.value)}>
+                                        <option value="Barchasi">Barchasi</option>
+                                        {uniqueSources.map(s => <option key={s} value={s}>{s}</option>)}
+                                    </select>
+                                </div>
+                                <button type="button" className="btn btn-outline btn-sm" style={{ width: '100%' }} onClick={clearFilters}>Tozalash</button>
+                            </div>
+                        )}
+                    </div>
                     <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
                         <Plus size={18} /> Yangi Lid
                     </button>
@@ -282,6 +318,30 @@ const Leads = () => {
                         </form>
                     </div>
                 </div >
+            )}
+
+            {viewingLead && (
+                <div className="modal-overlay" onClick={() => setViewingLead(null)}>
+                    <div className="modal-content" style={{ maxWidth: '380px' }} onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="modal-title m-0">{viewingLead.name}</h3>
+                            <button className="icon-btn-small" onClick={() => setViewingLead(null)}><X size={20} /></button>
+                        </div>
+                        <div className="flex flex-col gap-2 text-sm">
+                            <div className="flex justify-between"><span className="text-muted">Telefon:</span><span className="font-semibold">{viewingLead.phone}</span></div>
+                            <div className="flex justify-between"><span className="text-muted">Kurs:</span><span className="font-semibold">{viewingLead.course}</span></div>
+                            <div className="flex justify-between"><span className="text-muted">Manba:</span><span className="font-semibold">{viewingLead.source}</span></div>
+                            <div className="flex justify-between"><span className="text-muted">Kelgan sana:</span><span className="font-semibold">{new Date(viewingLead.createdAt).toLocaleDateString()}</span></div>
+                            {viewingLead.reason && (
+                                <div className="flex justify-between"><span className="text-muted">Rad etish sababi:</span><span className="font-semibold">{viewingLead.reason}</span></div>
+                            )}
+                        </div>
+                        <div className="flex gap-2 justify-end mt-4">
+                            <button className="btn btn-outline" onClick={() => handlePhone(viewingLead.phone)}><Phone size={16} /> Qo'ng'iroq</button>
+                            <button className="btn btn-primary" onClick={() => setViewingLead(null)}>Yopish</button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div >
     );

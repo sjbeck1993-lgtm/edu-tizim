@@ -134,20 +134,42 @@ const courseController = {
 
     uploadMaterial: async (req, res) => {
         try {
-            const { name, type, courseId, groupId } = req.body;
+            const { name, type, courseId, groupId, externalUrl } = req.body;
+
+            let fileUrl = null;
+            let size = "Noma'lum";
+
+            if (type === 'video') {
+                if (!externalUrl) {
+                    return res.status(400).json({ message: "Video uchun havola (link) kiritish shart." });
+                }
+                fileUrl = externalUrl;
+                size = 'Havola';
+            } else if (type !== 'folder') {
+                if (!req.file) {
+                    return res.status(400).json({ message: "Fayl tanlanmadi." });
+                }
+                fileUrl = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+                size = req.file.size > 1024 * 1024
+                    ? `${(req.file.size / 1024 / 1024).toFixed(1)} MB`
+                    : `${Math.max(1, Math.round(req.file.size / 1024))} KB`;
+            }
+
             const newMaterial = await prisma.material.create({
                 data: {
                     name,
                     type,
                     courseId: courseId ? parseInt(courseId) : null,
                     groupId: groupId ? parseInt(groupId) : null,
-                    size: "Noma'lum",
+                    size,
+                    fileUrl,
                     tenantId: req.user.tenantId
                 }
             });
             res.status(201).json(newMaterial);
         } catch (error) {
-            res.status(500).json({ message: "Xatolik" });
+            console.error("Material upload error:", error);
+            res.status(500).json({ message: error.message || "Xatolik" });
         }
     },
 

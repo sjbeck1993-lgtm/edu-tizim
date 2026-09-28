@@ -203,7 +203,34 @@ const paymentController = {
     },
 
     uploadReceipt: async (req, res) => {
-        res.json({ message: "Yuklandi" });
+        try {
+            if (!req.file) {
+                return res.status(400).json({ message: "Chek rasmi topilmadi." });
+            }
+            const { amount, month } = req.body;
+            if (!amount || !month) {
+                return res.status(400).json({ message: "Summa va oy ko'rsatilishi shart." });
+            }
+
+            const dataUri = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+
+            await prisma.payment.create({
+                data: {
+                    studentId: req.user.id,
+                    amount: parseFloat(amount),
+                    month,
+                    method: "Chek (tekshirilmoqda)",
+                    status: 'pending',
+                    receiptUrl: dataUri,
+                    tenantId: req.user.tenantId
+                }
+            });
+
+            res.status(201).json({ message: "Chek qabul qilindi, admin tez orada tekshiradi!" });
+        } catch (error) {
+            console.error("Receipt upload error:", error);
+            res.status(500).json({ message: error.message || "Chekni yuklashda xatolik yuz berdi" });
+        }
     }
 };
 
