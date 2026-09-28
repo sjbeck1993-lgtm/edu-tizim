@@ -43,9 +43,9 @@ const Sidebar = () => {
     return (
         <aside className="sidebar">
             <div className="sidebar-header">
-                <div className="logo-icon">SC</div>
+                <img src="/logo-icon.png" alt="Smart Learning Center" className="logo-icon" />
                 <div className="logo-text">
-                    <span className="logo-title">SmartCenter</span>
+                    <span className="logo-title">Smart Learning Center</span>
                     <span className="logo-subtitle">CRM & LMS</span>
                 </div>
             </div>

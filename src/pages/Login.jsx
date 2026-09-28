@@ -44,8 +44,8 @@ const Login = () => {
         <div className="login-page">
             <div className="login-brand-panel">
                 <div className="login-brand-content">
-                    <div className="login-brand-logo">SC</div>
-                    <h1>SmartCenter</h1>
+                    <img src="/logo-icon.png" alt="Smart Learning Center" className="login-brand-logo" />
+                    <h1>Smart Learning Center</h1>
                     <p className="login-brand-tagline">O'quv markazingizni boshqarish uchun yagona tizim</p>
 
                     <svg className="login-illustration" viewBox="0 0 440 320" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -87,7 +87,7 @@ const Login = () => {
             <div className="login-form-panel">
                 <div className="login-card">
                     <div className="login-header">
-                        <div className="login-logo-mobile">SC</div>
+                        <img src="/logo-icon.png" alt="Smart Learning Center" className="login-logo-mobile" />
                         <h2>Tizimga Kirish</h2>
                         <p>Smart Learning Center portali</p>
                     </div>
