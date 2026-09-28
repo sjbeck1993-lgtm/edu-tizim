@@ -16,9 +16,9 @@ const PrivateRoute = ({ allowedRoles }) => {
     if (allowedRoles && !allowedRoles.includes(user.role)) {
         // Redirect to a safe page or dashboard if user tries to access unauthorized page
         if (user.role === 'STUDENT' || user.role === 'PARENT') {
-            return <Navigate to="/student-app" replace />;
+            return <Navigate to="/panel/student-app" replace />;
         } else {
-            return <Navigate to="/" replace />;
+            return <Navigate to="/panel" replace />;
         }
     }
 

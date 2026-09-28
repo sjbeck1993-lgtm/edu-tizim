@@ -46,15 +46,15 @@ const Dashboard = () => {
 
     const handleViewAll = (section) => {
         if (section === "To'lovlar" || section === "Moliya dinamikasi") {
-            navigate('/finance');
+            navigate('/panel/finance');
         } else if (section === "Haftalik Davomat") {
-            navigate('/attendance');
+            navigate('/panel/attendance');
         } else if (section === "O'quvchilar") {
-            navigate('/students');
+            navigate('/panel/students');
         } else if (section === "Guruhlar") {
-            navigate('/courses');
+            navigate('/panel/courses');
         } else if (section === "Lidlar") {
-            navigate('/leads');
+            navigate('/panel/leads');
         } else {
             toast(`Bunday bo'lim topilmadi`, { icon: '⚠️' });
         }

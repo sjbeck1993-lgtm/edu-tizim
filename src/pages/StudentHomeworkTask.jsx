@@ -67,7 +67,7 @@ const StudentHomeworkTask = () => {
                 <div className="p-8 text-center text-muted">
                     {loadError}
                     <div className="mt-4">
-                        <button className="btn btn-outline" onClick={() => navigate('/student-app')}><ArrowLeft size={16} /> Ortga</button>
+                        <button className="btn btn-outline" onClick={() => navigate('/panel/student-app')}><ArrowLeft size={16} /> Ortga</button>
                     </div>
                 </div>
             </div>
@@ -83,7 +83,7 @@ const StudentHomeworkTask = () => {
                     <p className="text-muted">
                         {result.autoGraded ? "Javoblaringiz tekshirildi, natijangizni \"Vazifalarim\" bo'limida ko'rishingiz mumkin." : "Javoblaringiz qabul qilindi, ustoz/AI tez orada tekshiradi."}
                     </p>
-                    <button className="btn btn-primary mt-4" onClick={() => navigate('/student-app')}>Vazifalarimga qaytish</button>
+                    <button className="btn btn-primary mt-4" onClick={() => navigate('/panel/student-app')}>Vazifalarimga qaytish</button>
                 </div>
             </div>
         );
@@ -92,7 +92,7 @@ const StudentHomeworkTask = () => {
     return (
         <div className="mobile-app-container">
             <div className="mobile-header" style={{ borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}>
-                <button className="hw-back-btn" onClick={() => navigate('/student-app')}><ArrowLeft size={18} /></button>
+                <button className="hw-back-btn" onClick={() => navigate('/panel/student-app')}><ArrowLeft size={18} /></button>
                 <h2 style={{ marginTop: '0.75rem' }}>{task.title}</h2>
                 <p>Muhlat: {new Date(task.deadline).toLocaleDateString()}</p>
             </div>

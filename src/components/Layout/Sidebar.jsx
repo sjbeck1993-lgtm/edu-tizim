@@ -8,22 +8,22 @@ const Sidebar = () => {
     const user = userStr ? JSON.parse(userStr) : { role: 'STUDENT' };
 
     const adminLinks = [
-        { path: '/', name: 'Bosh Panel', icon: <LayoutDashboard size={20} /> },
-        // { path: '/leads', name: 'Lidlar va Sotuv', icon: <Users size={20} /> },
-        { path: '/students', name: 'O\'quvchilar Bazasi', icon: <GraduationCap size={20} /> },
-        { path: '/finance', name: 'Moliya va To\'lovlar', icon: <DollarSign size={20} /> },
-        { path: '/hr', name: 'HR va KPI', icon: <UserCheck size={20} /> },
+        { path: '/panel', name: 'Bosh Panel', icon: <LayoutDashboard size={20} /> },
+        // { path: '/panel/leads', name: 'Lidlar va Sotuv', icon: <Users size={20} /> },
+        { path: '/panel/students', name: 'O\'quvchilar Bazasi', icon: <GraduationCap size={20} /> },
+        { path: '/panel/finance', name: 'Moliya va To\'lovlar', icon: <DollarSign size={20} /> },
+        { path: '/panel/hr', name: 'HR va KPI', icon: <UserCheck size={20} /> },
     ];
 
     const academicLinks = [
-        { path: '/courses', name: 'Kurslar va Guruhlar', icon: <BookOpen size={20} /> },
-        { path: '/attendance', name: 'Davomat', icon: <UserCheck size={20} /> },
-        { path: '/homework', name: 'Uy vazifasi va Testlar', icon: <BookOpen size={20} /> },
-        { path: '/ai-analyst', name: 'AI Tahlilchi', icon: <GraduationCap size={20} /> },
+        { path: '/panel/courses', name: 'Kurslar va Guruhlar', icon: <BookOpen size={20} /> },
+        { path: '/panel/attendance', name: 'Davomat', icon: <UserCheck size={20} /> },
+        { path: '/panel/homework', name: 'Uy vazifasi va Testlar', icon: <BookOpen size={20} /> },
+        { path: '/panel/ai-analyst', name: 'AI Tahlilchi', icon: <GraduationCap size={20} /> },
     ];
 
     const studentLinks = [
-        { path: '/student-app', name: 'Ota-ona (Mobil Ilova)', icon: <Users size={20} /> }
+        { path: '/panel/student-app', name: 'Ota-ona (Mobil Ilova)', icon: <Users size={20} /> }
     ];
 
     const renderLinks = (links) => {
@@ -81,7 +81,7 @@ const Sidebar = () => {
             </div>
 
             <div className="sidebar-footer">
-                <NavLink to="/settings" className="sidebar-link">
+                <NavLink to="/panel/settings" className="sidebar-link">
                     <Settings size={20} />
                     <span>Sozlamalar</span>
                 </NavLink>

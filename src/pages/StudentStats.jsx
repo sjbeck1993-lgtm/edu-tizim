@@ -163,7 +163,7 @@ const StudentStats = () => {
                                 <p>{task.group} • {new Date(task.deadline).toLocaleDateString()}</p>
                             </div>
                             {task.status === 'pending' ? (
-                                <button className="btn btn-sm btn-primary" onClick={() => navigate(`/student-app/homework/${task.id}`)}>
+                                <button className="btn btn-sm btn-primary" onClick={() => navigate(`/panel/student-app/homework/${task.id}`)}>
                                     Boshlash <ArrowRight size={14} />
                                 </button>
                             ) : task.status === 'submitted' ? (
