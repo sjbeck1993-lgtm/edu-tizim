@@ -19,16 +19,11 @@
 }
 
 .logo-icon {
-    background: linear-gradient(135deg, var(--primary-blue), #60a5fa);
-    color: white;
     width: 40px;
     height: 40px;
     border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 1.1rem;
+    object-fit: cover;
+    flex-shrink: 0;
 }
 
 .logo-text {
@@ -39,8 +34,8 @@
 .logo-title {
     color: white;
     font-weight: bold;
-    font-size: 1.1rem;
-    letter-spacing: 0.5px;
+    font-size: 0.95rem;
+    line-height: 1.2;
 }
 
 .logo-subtitle {

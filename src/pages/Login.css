@@ -33,12 +33,7 @@
     width: 56px;
     height: 56px;
     border-radius: var(--radius-md);
-    background: rgba(255, 255, 255, 0.15);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 1.25rem;
+    object-fit: cover;
     margin-bottom: var(--space-6);
 }
 
@@ -105,12 +100,8 @@
     display: none;
     width: 56px;
     height: 56px;
-    background-color: var(--primary-blue);
-    color: white;
+    object-fit: cover;
     border-radius: var(--radius-md);
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
     margin: 0 auto var(--space-4);
 }
 
@@ -200,6 +191,6 @@
 
 @media (max-width: 899px) {
     .login-logo-mobile {
-        display: flex;
+        display: block;
     }
 }
