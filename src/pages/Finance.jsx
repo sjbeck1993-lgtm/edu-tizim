@@ -54,7 +54,7 @@ const Finance = () => {
             const data = res.data.map(p => ({
                 id: p.id,
                 student: p.student?.name || 'Noma\'lum',
-                group: p.student?.studentProfile?.group?.name || 'Umumiy',
+                group: p.group?.name || 'Umumiy',
                 method: p.method || '-',
                 rawAmount: p.amount,
                 amount: new Intl.NumberFormat('uz-UZ').format(p.amount) + ' UZS',
@@ -81,7 +81,33 @@ const Finance = () => {
     };
 
     const handleExcelExport = () => {
-        toast.success("Excel hisobot yuklanmoqda...", { icon: '📊' });
+        const rows = filterPayments();
+        if (rows.length === 0) {
+            toast.error("Yuklab olish uchun ma'lumot yo'q");
+            return;
+        }
+
+        const headers = ["O'quvchi", "Guruh", "Oy", "Summa", "To'lov turi", "Sana", "Holat"];
+        const statusLabel = { paid: "To'langan", debt: "Qarzdor", pending: "Kutilmoqda" };
+        const escapeCsv = (value) => `"${String(value).replace(/"/g, '""')}"`;
+        const csvLines = [
+            headers.map(escapeCsv).join(','),
+            ...rows.map(p => [p.student, p.group, p.month, p.amount, p.method, p.date, statusLabel[p.status] || p.status].map(escapeCsv).join(','))
+        ];
+        // Excel'da o'zbekcha harflar to'g'ri ko'rinishi uchun UTF-8 BOM qo'shiladi
+        const csvContent = '﻿' + csvLines.join('\r\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `tolovlar-${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        toast.success("Hisobot yuklab olindi!", { icon: '📊' });
     };
 
     const handleBulkSMS = async (smsType) => {
@@ -134,9 +160,9 @@ const Finance = () => {
     };
 
     const handleAutoDebt = async () => {
-        if (!window.confirm(`${selectedMonth} oyi uchun barcha to'lamaganlarga avtomatik qarz yozamizmi?`)) return;
+        if (!window.confirm("Obuna muddati tugagan barcha o'quvchilarga qarz yozamizmi? (Bu tekshiruv har kuni avtomatik ham ishga tushadi)")) return;
         try {
-            const res = await axiosClient.post('/payments/auto-debt', { month: selectedMonth });
+            const res = await axiosClient.post('/payments/auto-debt');
             toast.success(res.data.message);
             fetchPayments();
         } catch (error) {

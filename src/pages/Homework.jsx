@@ -17,6 +17,12 @@ const Homework = () => {
     const [courses, setCourses] = useState([]);
     const [formData, setFormData] = useState({ title: '', groupId: '', deadline: '' });
     const [activeTask, setActiveTask] = useState(null); // Which task's submissions we are viewing
+    const [taskSearchQuery, setTaskSearchQuery] = useState('');
+
+    const filteredTasks = tasks.filter(task =>
+        task.title.toLowerCase().includes(taskSearchQuery.toLowerCase()) ||
+        task.group.toLowerCase().includes(taskSearchQuery.toLowerCase())
+    );
 
     useEffect(() => {
         fetchTasks();
@@ -126,7 +132,12 @@ const Homework = () => {
                         <h3 className="section-title">Faol vazifalar</h3>
                         <div className="search-box small">
                             <Search size={14} />
-                            <input type="text" placeholder="Qidirish..." />
+                            <input
+                                type="text"
+                                placeholder="Qidirish..."
+                                value={taskSearchQuery}
+                                onChange={(e) => setTaskSearchQuery(e.target.value)}
+                            />
                         </div>
                     </div>
 
@@ -135,7 +146,9 @@ const Homework = () => {
                             <div className="p-4 text-center text-muted">Yuklanmoqda...</div>
                         ) : tasks.length === 0 ? (
                             <div className="p-4 text-center text-muted">Hozircha vazifalar yo'q.</div>
-                        ) : tasks.map(task => (
+                        ) : filteredTasks.length === 0 ? (
+                            <div className="p-4 text-center text-muted">Hech narsa topilmadi.</div>
+                        ) : filteredTasks.map(task => (
                             <div
                                 key={task.id}
                                 className={`task-card ${task.status} ${activeTask?.id === task.id ? 'active-border' : ''}`}
