@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, CheckCircle2, XCircle, Search, Save, Clock, ChevronDown, Camera } from 'lucide-react';
+import { Calendar, CheckCircle2, XCircle, Search, Save, Clock, ChevronDown } from 'lucide-react';
 import axiosClient from '../api/axiosClient';
 import toast from 'react-hot-toast';
 import './Attendance.css';
@@ -88,18 +88,6 @@ const Attendance = () => {
         }
     };
 
-    const handleFaceId = () => {
-        toast.loading("Kamera va sun'iy intellekt ishga tushirildi...", { duration: 2000 });
-        setTimeout(() => {
-            // Simulate 2 random absent students
-            setStudents(students.map((s, i) => i === 3 || i === 6 ? { ...s, present: false } : { ...s, present: true }));
-            toast.success("Yuzlar muvaffaqiyatli tahlil qilindi! 2 ta o'quvchi kelmadi.", {
-                icon: '📷',
-                duration: 4000
-            });
-        }, 2000);
-    };
-
     const presentCount = students.filter(s => s.present).length;
     const absentCount = students.length - presentCount;
 
@@ -169,11 +157,8 @@ const Attendance = () => {
                 </div>
                 <div className="banner-content">
                     <h4>Vaqtni tejash rejimi</h4>
-                    <p>Faqat <b>kelmagan</b> o'quvchilarni belgilang. Qolganlar avtomatik "kelgan" deb olinadi. Yoki Face ID kamerani yoqing.</p>
+                    <p>Faqat <b>kelmagan</b> o'quvchilarni belgilang. Qolganlar avtomatik "kelgan" deb olinadi.</p>
                 </div>
-                <button className="btn btn-sm btn-outline face-id-btn" onClick={handleFaceId}>
-                    <Camera size={16} /> Face ID Yoqish
-                </button>
             </div>
 
             <div className="students-grid animate-fade-in">

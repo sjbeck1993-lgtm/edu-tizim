@@ -127,17 +127,6 @@
     color: var(--text-main);
 }
 
-.face-id-btn {
-    background-color: white;
-    border-color: var(--primary-blue);
-    color: var(--primary-blue);
-}
-
-.face-id-btn:hover {
-    background-color: var(--primary-blue);
-    color: white;
-}
-
 .students-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
