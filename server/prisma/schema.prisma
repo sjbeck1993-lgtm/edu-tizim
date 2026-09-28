@@ -201,6 +201,7 @@ model Material {
   name      String
   type      String
   size      String
+  fileUrl   String?
   courseId  Int?
   groupId   Int?
   tenantId  Int?

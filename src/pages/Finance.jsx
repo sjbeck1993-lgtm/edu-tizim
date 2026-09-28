@@ -16,6 +16,7 @@ const Finance = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSmsModalOpen, setIsSmsModalOpen] = useState(false);
     const [selectedReceipt, setSelectedReceipt] = useState(null);
+    const [viewingReceiptImage, setViewingReceiptImage] = useState(null);
     const [studentsList, setStudentsList] = useState([]);
     const [courses, setCourses] = useState([]);
     const [formData, setFormData] = useState({ studentId: '', amount: '300000', month: new Date().toISOString().split('T')[0], method: 'Naqd', status: 'paid', groupId: '' });
@@ -289,7 +290,7 @@ const Finance = () => {
                                         {payment.status === 'pending' ? (
                                             <>
                                                 {payment.receiptUrl && (
-                                                    <button className="btn btn-sm btn-outline" onClick={() => window.open(`https://edu-tizim-production.up.railway.app${payment.receiptUrl}`, '_blank')}>
+                                                    <button className="btn btn-sm btn-outline" onClick={() => setViewingReceiptImage(payment.receiptUrl)}>
                                                         Chekni ko'rish
                                                     </button>
                                                 )}
@@ -477,6 +478,21 @@ const Finance = () => {
                         <div className="flex gap-2 justify-center mt-4">
                             <button className="btn btn-outline" onClick={() => window.print()}>🖨️ Chop etish</button>
                             <button className="btn btn-primary" onClick={() => setSelectedReceipt(null)}>Yopish</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {viewingReceiptImage && (
+                <div className="modal-overlay" onClick={() => setViewingReceiptImage(null)}>
+                    <div className="modal-content" style={{ maxWidth: '420px' }} onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="modal-title m-0">O'quvchi yuborgan chek</h3>
+                            <button className="icon-btn-small" onClick={() => setViewingReceiptImage(null)}><X size={20} /></button>
+                        </div>
+                        <img src={viewingReceiptImage} alt="To'lov cheki" style={{ width: '100%', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)' }} />
+                        <div className="flex justify-end mt-4">
+                            <button className="btn btn-outline" onClick={() => setViewingReceiptImage(null)}>Yopish</button>
                         </div>
                     </div>
                 </div>

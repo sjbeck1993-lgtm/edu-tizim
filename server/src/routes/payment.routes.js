@@ -3,20 +3,30 @@ const router = express.Router();
 const paymentController = require('../controllers/payment.controller');
 const { authenticateToken, authorizeRole } = require('../middleware/auth');
 const multer = require('multer');
-const path = require('path');
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/');
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + path.extname(file.originalname));
+// Chek rasmi ma'lumotlar bazasiga (base64) saqlanadi, diskka emas - Render'ning
+// bepul tarifidagi disk har deployda tozalanadi va fayllar yo'qolib qolar edi.
+const receiptUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 4 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        if (!file.mimetype.startsWith('image/')) {
+            return cb(new Error("Faqat rasm fayllari qabul qilinadi."));
+        }
+        cb(null, true);
     }
 });
-const upload = multer({ storage });
+const handleReceiptUpload = (req, res, next) => {
+    receiptUpload.single('receipt')(req, res, (err) => {
+        if (err) {
+            return res.status(400).json({ message: err.message || "Chekni yuklashda xatolik yuz berdi." });
+        }
+        next();
+    });
+};
 
 // O'quvchilar chek yuklashlari mumkin
-router.post('/upload', authenticateToken, authorizeRole('STUDENT'), upload.single('receipt'), paymentController.uploadReceipt);
+router.post('/upload', authenticateToken, authorizeRole('STUDENT'), handleReceiptUpload, paymentController.uploadReceipt);
 
 // Qolganlari faqat adminlar uchun
 router.use(authenticateToken, authorizeRole('ADMIN'));
