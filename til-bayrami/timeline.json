@@ -1,0 +1,19 @@
+{
+  "dur": 90.0,
+  "heartbeat": [0.8, 1.5, 2.4, 3.1, 4.0, 4.7],
+  "ona_form": [0.3, 2.8], "ona_out": [5.2, 6.0],
+  "roll": [6.4, 8.4], "lock": 8.4, "oct": [9.0, 10.4], "law": [12.5, 14.5], "date_out": [18.0, 19.0],
+  "steps": [19.4, 27.0], "steps_text": 19.9, "steps_out": [29.0, 30.0],
+  "morph": [30.0, 35.5, 39.0, 43.0, 47.5],
+  "morph_words": ["ALLA", "NON", "VATAN", "KITOB", "TIL"],
+  "orbit": 49.5, "til_out": [56.0, 58.0],
+  "legal": [58.3, 69.0],
+  "book": [70.0, 76.6], "flash": 77.0,
+  "shine": 79.8,
+  "cta": [82.2, 88.8],
+  "subs": [
+    [30.6, 34.6, "Til bizga alla boʻlib eshitildi."],
+    [35.6, 45.6, "Non. Vatan. Kitob.\nOddiy soʻzlar — lekin ularda butun xalqning ruhi bor."],
+    [52.8, 56.6, "Til bor ekan — millat bor."]
+  ]
+}
