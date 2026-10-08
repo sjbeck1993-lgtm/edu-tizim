@@ -3,7 +3,7 @@ import json, os
 HERE=os.path.dirname(os.path.abspath(__file__))
 DEFAULT=[1.0,7.2,4.2,2.8,7.0,2.8,4.2]
 BASE=dict(pre=1.4,g1=1.5,g2=1.0,g3=1.4,g4=1.2,g5=1.2,h12=4.3,h11=6.4,hf=4.8)
-WGT=dict(pre=1.4,g1=1.0,g2=1.0,g3=1.2,g4=1.2,g5=1.4,h12=1.0,h11=1.0,hf=1.9)
+WGT=dict(pre=1.0,g1=0.6,g2=0.6,g3=0.8,g4=0.8,g5=0.9,h12=2.0,h11=2.0,hf=2.6)
 def durs(path=None):
     p=path or os.path.join(HERE,'voice','voice.json')
     if os.path.exists(p): return json.load(open(p))['durs']

@@ -14,7 +14,8 @@ sm=lambda x: (lambda y: y*y*(3-2*y))(np.clip(x,0,1))
 # --- ovoz (har gap cues dagi vaqtga qoʻyiladi)
 voice=np.zeros((N,2)); starts=[C['s1'],C['s2'],C['s3'],C['s4'],C['s5'],C['s6'],C['s7']]
 for i,s0 in enumerate(starts):
-    x=dec(['-i',os.path.join(VD,f'line{i+1}.wav'),'-af','highpass=f=75,afftdn=nr=14:nf=-38,equalizer=f=140:t=q:w=1:g=2,equalizer=f=3500:t=q:w=1.2:g=2.5,deesser=i=0.25,acompressor=threshold=-21dB:ratio=3:attack=6:release=140,aecho=0.85:0.9:55|110:0.14|0.07'])
+    CH=('highpass=f=70,acompressor=threshold=-22dB:ratio=2.5:attack=8:release=160' if os.environ.get('VOICE_CLEAN') else 'highpass=f=75,afftdn=nr=14:nf=-38,equalizer=f=140:t=q:w=1:g=2,equalizer=f=3500:t=q:w=1.2:g=2.5,deesser=i=0.25,acompressor=threshold=-21dB:ratio=3:attack=6:release=140,aecho=0.85:0.9:55|110:0.14|0.07')
+    x=dec(['-i',os.path.join(VD,f'line{i+1}.wav'),'-af',CH])
     x=np.nan_to_num(x); r=np.sqrt(np.mean(x**2))+1e-9; x=x*(0.11/r)
     put(voice,x,s0)
 env=np.convolve(np.abs(voice).mean(1),np.ones(int(sr*0.25))/int(sr*0.25),'same'); duck=1-0.62*np.clip(env/0.04,0,1)
