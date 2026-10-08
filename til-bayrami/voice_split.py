@@ -23,6 +23,6 @@ if not best: print('7 ta gap topilmadi, topilgan:',segs(-38,0.7)); sys.exit(1)
 durs=[]
 for i,(a,b) in enumerate(best):
     a=max(a-0.15,0); b=min(b+0.2,dur)
-    subprocess.run(['ffmpeg','-y','-loglevel','error','-ss',str(a),'-to',str(b),'-i',wav,'-af','afade=t=in:d=0.04,afade=t=out:d=0.12','-c:a','pcm_s16le',os.path.join(out,f'line{i+1}.wav')],check=True)
+    subprocess.run(['ffmpeg','-y','-loglevel','error','-ss',str(a),'-to',str(b),'-i',wav,'-af',f'afade=t=in:d=0.04,afade=t=out:st={max(b-a-0.12,0):.3f}:d=0.12','-c:a','pcm_s16le',os.path.join(out,f'line{i+1}.wav')],check=True)
     durs.append(round(b-a,3))
 json.dump({'durs':durs},open(os.path.join(out,'voice.json'),'w')); print('OK',durs)
