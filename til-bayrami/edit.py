@@ -9,7 +9,7 @@ ARGS=sys.argv[1:]; W=int(ARGS[0]); MODE=ARGS[1]
 sys.argv=['video.py',str(W)]
 import video as V, cues
 H=V.H; SC=V.SC; FPS=30
-C=cues.layout(cues.durs(os.environ.get('VOICE_JSON')))
+_vj=os.environ.get('VOICE_JSON'); C=cues.layout(cues.durs(_vj),mk=cues.marks(_vj))
 V.TL['flash']=C['flash']; V.TL['cta']=[C['cta'],C['end']]
 CREAM=np.array([1.0,0.955,0.86],np.float32); GOLD=np.array([0.97,0.76,0.30],np.float32)
 PF=os.path.join(HERE,'fonts','PlayfairDisplay[wght].ttf'); CS=os.path.join(HERE,'fonts','CormorantSC-SemiBold.ttf')
@@ -65,17 +65,17 @@ def grade(b):
 
 # ------------------ sahnalar
 def build():
-    s=C; d=s['d']; S=[]
+    s=C; d=s['d']; m5=s['m5']; S=[]
     def add(clip,a,ss,xf,z0=1.0,z1=1.08,pan=(0.0,0.0)): S.append(dict(clip=clip,a=a,ss=ss,xf=xf,z0=z0,z1=z1,pan=pan))
     add('01',0.0,0.3,0.0,1.0,1.10)
     add('05',s['s2']-0.8,0.2,0.9,1.0,1.07)
-    add('08',s['s3']-0.7,3.0,0.8,1.0,1.06)
-    add('07',s['s3']+d[2]*0.55,0.8,0.6,1.02,1.08)
+    add('08',s['s2']+s['m2'][2]-0.5,2.0,0.9,1.0,1.06)
+    add('07',s['s3']-0.4,0.8,0.8,1.02,1.08)
     add('02',s['s4']-0.7,5.2,0.9,1.0,1.06)
-    add('06',s['s5']-0.3,1.2,0.5,1.0,1.08)
-    add('05',s['s5']+d[4]*0.2-0.2,6.0,0.35,1.0,1.10)
-    add('03',s['s5']+d[4]*0.4-0.2,3.2,0.35,1.0,1.08)
-    add('04',s['s5']+d[4]*0.6-0.2,5.5,0.4,1.0,1.08)
+    add('06',s['s5']+m5[0]-0.3,1.2,0.5,1.0,1.08)
+    add('05',s['s5']+m5[1]-0.2,6.0,0.35,1.0,1.10)
+    add('03',s['s5']+m5[2]-0.2,3.2,0.35,1.0,1.08)
+    add('04',s['s5']+m5[3]-0.2,5.5,0.4,1.0,1.08)
     add('10',s['s6']-0.6,2.2,0.8,1.0,1.06)
     add('09',s['s6']+1.9,3.0,0.7,1.0,1.07)
     add('12',s['a12'],0.0,0.9,1.16,1.08,(0.0,-1.0))
@@ -119,14 +119,14 @@ def titles(fr,t):
         put(fr,'ONA',330,960,505,CREAM,a,sp=60,dy=(1-eo(seg(t,c['s1']-0.3,c['s1']+0.9)))*30)
         hline(fr,830,1090,690,eo(seg(t,c['s1']+0.5,c['s1']+1.6)),a)
     # SANA
-    a=env(t,c['s2']+0.2,c['s3']-0.1)
+    a=env(t,c['s2']+c['m2'][0],c['s3']-0.1)
     if a>0:
         fr*= (1-SCRIM*a)
         r=lambda t0,dur=0.9: (1-eo(seg(t,t0,t0+dur)))*34
-        put(fr,'1989',250,150,655,CREAM,a*sm(seg(t,c['s2']+0.2,c['s2']+1.0)),left=True,dy=r(c['s2']+0.2))
-        put(fr,'21-OKTABR',62,158,850,GOLD,a*sm(seg(t,c['s2']+0.9,c['s2']+1.7)),kind='cs',sp=16,left=True,dy=r(c['s2']+0.9))
-        hline(fr,158,560,898,eo(seg(t,c['s2']+1.3,c['s2']+2.4)),a)
-        put(fr,'«Davlat tili haqida»gi qonun qabul qilindi',50,158,958,CREAM,a*sm(seg(t,c['s2']+2.2,c['s2']+3.2)),left=True,dy=r(c['s2']+2.2))
+        put(fr,'1989',250,150,655,CREAM,a*sm(seg(t,c['s2']+c['m2'][0],c['s2']+c['m2'][0]+0.8)),left=True,dy=r(c['s2']+c['m2'][0]))
+        put(fr,'21-OKTABR',62,158,850,GOLD,a*sm(seg(t,c['s2']+c['m2'][1],c['s2']+c['m2'][1]+0.8)),kind='cs',sp=16,left=True,dy=r(c['s2']+c['m2'][1]))
+        hline(fr,158,560,898,eo(seg(t,c['s2']+c['m2'][1]+0.4,c['s2']+c['m2'][1]+1.5)),a)
+        put(fr,'«Davlat tili haqida»gi qonun qabul qilindi',50,158,958,CREAM,a*sm(seg(t,c['s2']+c['m2'][2],c['s2']+c['m2'][2]+1.0)),left=True,dy=r(c['s2']+c['m2'][2]))
     # QADAM
     a=env(t,c['s3']+0.1,c['s4']-0.5)
     if a>0:
@@ -135,12 +135,12 @@ def titles(fr,t):
         put(fr,'Milliy mustaqillik sari',80,150,815,CREAM,a*sm(seg(t,c['s3']+0.1,c['s3']+1.0)),left=True,dy=r(c['s3']+0.1))
         put(fr,'muhim qadam',130,150,950,GOLD,a*sm(seg(t,c['s3']+0.9,c['s3']+1.9)),left=True,dy=r(c['s3']+0.9))
     # NON / VATAN / KITOB
-    s5=c['s5']; d5=d[4]
-    for w,f0,f1 in (('NON',0.0,0.2),('VATAN',0.2,0.4),('KITOB',0.4,0.6)):
-        a=env(t,s5+d5*f0-0.15,s5+d5*f1+0.1,0.3,0.3)
+    s5=c['s5']; m5=c['m5']
+    for w,t0,t1 in (('NON',m5[0],m5[1]),('VATAN',m5[1],m5[2]),('KITOB',m5[2],m5[3])):
+        a=env(t,s5+t0-0.15,s5+t1-0.05,0.3,0.3)
         if a>0:
             fr*= (1-SCRIM*a*0.9)
-            put(fr,w,240,150,900,CREAM,a,sp=22,left=True,dy=(1-eo(seg(t,s5+d5*f0-0.15,s5+d5*f0+0.5)))*40)
+            put(fr,w,240,150,900,CREAM,a,sp=22,left=True,dy=(1-eo(seg(t,s5+t0-0.15,s5+t0+0.5)))*40)
     # MODDA (yorqin osmon ustida toʻq siyoh)
     a=env(t,c['a12']+0.9,c['a11']-0.5,0.8,0.8)
     if a>0:
