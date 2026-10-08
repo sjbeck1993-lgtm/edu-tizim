@@ -1,2 +1,5 @@
-out/.parts_*/
+out/
+clips/
+voice/
 __pycache__/
+*.wav
