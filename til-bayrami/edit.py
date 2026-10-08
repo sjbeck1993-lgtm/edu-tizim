@@ -142,7 +142,7 @@ def titles(fr,t):
             fr*= (1-SCRIM*a*0.9)
             put(fr,w,240,150,900,CREAM,a,sp=22,left=True,dy=(1-eo(seg(t,s5+d5*f0-0.15,s5+d5*f0+0.5)))*40)
     # MODDA (yorqin osmon ustida toʻq siyoh)
-    a=env(t,c['a12']+0.9,c['a12']+6.2,0.8,0.8)
+    a=env(t,c['a12']+0.9,c['a11']-0.5,0.8,0.8)
     if a>0:
         INK=np.array([0.10,0.07,0.05],np.float32); GINK=np.array([0.42,0.25,0.04],np.float32)
         r=lambda t0: (1-eo(seg(t,t0,t0+0.9)))*26
