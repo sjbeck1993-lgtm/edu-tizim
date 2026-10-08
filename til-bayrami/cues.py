@@ -3,7 +3,7 @@ import json, os
 HERE=os.path.dirname(os.path.abspath(__file__))
 DEFAULT=[1.0,7.2,4.2,2.8,7.0,2.8,4.2]
 BASE=dict(pre=1.4,g1=1.5,g2=1.0,g3=1.4,g4=1.2,g5=1.2,h12=4.3,h11=6.4,hf=4.8)
-WGT=dict(pre=1.0,g1=0.6,g2=0.6,g3=0.8,g4=0.8,g5=0.9,h12=2.0,h11=2.0,hf=2.6)
+WGT=dict(pre=1.0,g1=1.0,g2=1.0,g3=1.0,g4=1.0,g5=1.0,h12=30.0,h11=2.0,hf=2.0)
 def durs(path=None):
     p=path or os.path.join(HERE,'voice','voice.json')
     if os.path.exists(p): return json.load(open(p))['durs']
@@ -25,5 +25,6 @@ def layout(d, flash_target='auto', mk=None):
     mk=mk or {}; c={'d':d,'b':b,'m2':mk.get('marks2',[0.3,0.4*d[1],0.7*d[1]]),'m5':mk.get('marks5',[0.0,0.2*d[4],0.4*d[4],0.6*d[4]])}; c['s1']=b['pre']; c['s2']=c['s1']+d[0]+b['g1']; c['s3']=c['s2']+d[1]+b['g2']; c['s4']=c['s3']+d[2]+b['g3']
     c['s5']=c['s4']+d[3]+b['g4']; c['s6']=c['s5']+d[4]+b['g5']
     c['a12']=c['s6']+b['h12']; c['a11']=c['a12']+b['h11']; c['flash']=c['a11']+b['hf']; c['s7']=c['flash']+3.2
+    c['am']=c['s6']+d[5]+0.6
     c['cta']=c['s7']-0.4; c['end']=c['s7']+d[6]+3.8
     return c

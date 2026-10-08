@@ -78,7 +78,11 @@ def build():
     add('04',s['s5']+m5[3]-0.2,5.5,0.4,1.0,1.08)
     add('03',s['s5']+m5[3]+3.2,6.8,0.6,1.0,1.08)
     add('10',s['s6']-0.6,2.2,0.8,1.0,1.06)
-    add('09',s['s6']+1.9,3.0,0.7,1.0,1.07)
+    # ovozsiz musiqali montaj (am .. a12)
+    shots=[('02',0.0,1.0,1.08),('03',0.0,1.08,1.0),('04',1.0,1.0,1.09),('09',1.0,1.08,1.0),('07',6.0,1.0,1.08),
+           ('06',6.0,1.08,1.0),('08',0.0,1.0,1.08),('10',5.5,1.08,1.0),('01',6.0,1.0,1.1),('05',6.2,1.06,1.0)]
+    step=(s['a12']-s['am'])/len(shots)
+    for k,(cl,ss,z0,z1) in enumerate(shots): add(cl,s['am']+k*step,ss,0.9,z0,z1)
     add('12',s['a12'],0.0,0.9,1.16,1.08,(0.0,-1.0))
     add('11',s['a11'],0.3,1.0,1.0,1.12)
     for i,sc in enumerate(S):
@@ -142,6 +146,18 @@ def titles(fr,t):
         if a>0:
             fr*= (1-SCRIM*a*0.9)
             put(fr,w,240,150,900,CREAM,a,sp=22,left=True,dy=(1-eo(seg(t,s5+t0-0.15,s5+t0+0.5)))*40)
+    # MONTAJ yozuvlari
+    avail=c['a12']-c['am']
+    a=env(t,c['am']+1.0,c['am']+6.6,0.8,0.8)
+    if a>0:
+        fr*=(1-SCRIM*a)
+        put(fr,'21-OKTABR',60,158,800,GOLD,a*sm(seg(t,c['am']+1.0,c['am']+1.9)),kind='cs',sp=16,left=True,dy=(1-eo(seg(t,c['am']+1.0,c['am']+2.0)))*30)
+        put(fr,'Oʻzbek tili bayrami',104,150,935,CREAM,a*sm(seg(t,c['am']+1.5,c['am']+2.6)),left=True,dy=(1-eo(seg(t,c['am']+1.5,c['am']+2.6)))*30)
+    t1=c['am']+avail*0.55
+    a=env(t,t1,t1+5.6,0.8,0.8)
+    if a>0:
+        fr*=(1-SCRIM*a)
+        put(fr,'Til — xalqning ruhi',108,150,935,GOLD,a*sm(seg(t,t1,t1+1.1)),left=True,dy=(1-eo(seg(t,t1,t1+1.1)))*30)
     # MODDA (yorqin osmon ustida toʻq siyoh)
     a=env(t,c['a12']+0.9,c['a11']-0.5,0.8,0.8)
     if a>0:
