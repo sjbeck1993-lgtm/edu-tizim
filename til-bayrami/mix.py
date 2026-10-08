@@ -73,7 +73,9 @@ out*= (1-sm((t-(C['end']-1.2))/1.2))[:,None]
 out=out[:int(C['end']*sr)]
 w=wave.open(sys.argv[1],'wb'); w.setnchannels(2); w.setsampwidth(2); w.setframerate(sr)
 tmp=sys.argv[1]+'.raw.wav'; 
-w.writeframes((np.clip(out/ (np.max(np.abs(out))+1e-9)*0.9,-1,1)*32767).astype(np.int16).tobytes()); w.close()
-r=subprocess.run(['ffmpeg','-hide_banner','-i',sys.argv[1],'-af','ebur128','-f','null','-'],capture_output=True,text=True).stderr
-import re; I=float(re.findall(r'I:\s+(-?[\d.]+) LUFS',r)[-1]); g=-15.0-I
-subprocess.run(['ffmpeg','-y','-loglevel','error','-i',sys.argv[1],'-af',f'volume={g:.2f}dB,alimiter=limit=0.89:attack=5:release=60',tmp],check=True); os.replace(tmp,sys.argv[1]); print('mix ok',round(C['end'],1),'s, gain',round(g,1),'dB')
+w.writeframes((np.clip(out*0.7,-1,1)*32767).astype(np.int16).tobytes()); w.close()
+import json, re
+r=subprocess.run(['ffmpeg','-hide_banner','-i',sys.argv[1],'-af','loudnorm=I=-15:TP=-1.5:LRA=11:print_format=json','-f','null','-'],capture_output=True,text=True).stderr
+j=json.loads(r[r.rindex('{'):r.rindex('}')+1])
+af=(f"loudnorm=I=-15:TP=-1.5:LRA=11:measured_I={j['input_i']}:measured_TP={j['input_tp']}:measured_LRA={j['input_lra']}:measured_thresh={j['input_thresh']}:offset={j['target_offset']}:linear=true")
+subprocess.run(['ffmpeg','-y','-loglevel','error','-i',sys.argv[1],'-af',af,'-ar','48000',tmp],check=True); os.replace(tmp,sys.argv[1]); print('mix ok',round(C['end'],1),'s')

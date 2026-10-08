@@ -3,3 +3,4 @@ clips/
 voice/
 __pycache__/
 *.wav
+music/*.mp3
