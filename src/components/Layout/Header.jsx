@@ -37,7 +37,7 @@ const Header = () => {
 
                 <div
                     className="user-profile"
-                    onClick={() => navigate('/settings')}
+                    onClick={() => navigate('/panel/settings')}
                     style={{ cursor: 'pointer' }}
                     title="Sozlamalarga o'tish"
                 >

@@ -10,9 +10,11 @@ import Courses from './pages/Courses';
 import Attendance from './pages/Attendance';
 import Homework from './pages/Homework';
 import StudentStats from './pages/StudentStats';
+import StudentHomeworkTask from './pages/StudentHomeworkTask';
 import AIAnalyst from './pages/AIAnalyst';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
+import Home from './pages/Home';
 import PrivateRoute from './components/Auth/PrivateRoute';
 import { Toaster } from 'react-hot-toast';
 
@@ -22,11 +24,12 @@ function App() {
       <Toaster position="top-right" />
       <Routes>
         {/* Public Routes */}
+        <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
 
-        {/* Protected Routes (Needs to be logged in) */}
+        {/* Protected Routes (Needs to be logged in) - CRM/LMS moved under /panel so the public site can live at / */}
         <Route element={<PrivateRoute allowedRoles={['ADMIN', 'TEACHER', 'STUDENT', 'PARENT']} />}>
-          <Route path="/" element={<MainLayout />}>
+          <Route path="/panel" element={<MainLayout />}>
 
             {/* Admin & Teacher ONLY Routes */}
             <Route element={<PrivateRoute allowedRoles={['ADMIN', 'TEACHER']} />}>
@@ -43,6 +46,7 @@ function App() {
 
             {/* Students & Parents Route */}
             <Route path="student-app" element={<StudentStats />} />
+            <Route path="student-app/homework/:taskId" element={<StudentHomeworkTask />} />
 
             <Route path="settings" element={<Settings />} />
           </Route>

@@ -86,7 +86,9 @@ const attendanceRoutes = require('./routes/attendance.routes');
 const homeworkRoutes = require('./routes/homework.routes');
 const studentRoutes = require('./routes/student.routes');
 const studentsAdminRoutes = require('./routes/studentsAdmin.routes');
+const publicRoutes = require('./routes/public.routes');
 
+app.use('/api/public', publicRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/leads', leadRoutes);
 app.use('/api/hr', hrRoutes);

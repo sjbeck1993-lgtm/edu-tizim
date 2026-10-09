@@ -28,9 +28,9 @@ const Login = () => {
 
             // Navigate based on roles
             if (user.role === 'ADMIN' || user.role === 'TEACHER') {
-                navigate('/'); // Main dashboard
+                navigate('/panel'); // Main dashboard
             } else {
-                navigate('/student-app'); // Parent/Student mobile view
+                navigate('/panel/student-app'); // Parent/Student mobile view
             }
 
         } catch (error) {
