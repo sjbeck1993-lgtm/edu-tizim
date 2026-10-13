@@ -10,6 +10,8 @@ sys.argv=['video.py',str(W)]
 import video as V, cues
 H=V.H; SC=V.SC; FPS=30
 _vj=os.environ.get('VOICE_JSON'); C=cues.layout(cues.durs(_vj),mk=cues.marks(_vj))
+HOK=os.environ.get('END_CARD')=='hokimlik'
+if HOK: V.L=np.ones_like(V.L)     # RMMM logosini oʻchiramiz (nur va yaltirash qoladi)
 V.TL['flash']=C['flash']; V.TL['cta']=[C['cta'],C['end']]
 CREAM=np.array([1.0,0.955,0.86],np.float32); GOLD=np.array([0.97,0.76,0.30],np.float32)
 PF=os.path.join(HERE,'fonts','PlayfairDisplay[wght].ttf'); CS=os.path.join(HERE,'fonts','CormorantSC-SemiBold.ttf')
@@ -170,12 +172,23 @@ def titles(fr,t):
         ink('«DAVLAT TILI HAQIDA»GI QONUN  ·  1-MODDA',30,222,INK*1.4,a*sm(seg(t,c['a12']+3.0,c['a12']+4.0)),kind='cs',sp=7)
     return fr
 
+def end_text(img,t):
+    lt=t-C['flash']+0.5
+    NAVYK=np.array([0.055,0.105,0.24],np.float32); GINK=np.array([0.70,0.46,0.07],np.float32)
+    def put2(text,size,y,col,a,kind='pf',sp=0,dy=0.0):
+        if a<=0.004: return
+        m=tm(text,size,sp,kind); h,w=m.shape; V.blit(img,m,W/2-w/2,(y+dy)*SC-h/2,col,a)
+    p1=seg(lt,1.0,2.0); p2=seg(lt,1.6,2.6); p3=seg(lt,2.3,3.4)
+    put2('YANGIQOʻRGʻON',116,392,NAVYK,float(sm(p1)),dy=(1-float(eo(p1)))*26)
+    put2('TUMAN HOKIMLIGI',70,508,GINK,float(sm(p2)),kind='cs',sp=22,dy=(1-float(eo(p2)))*22)
+
 def render(n):
     t=n/FPS; c=C; fl=c['flash']
     base=grade(compose(t)) if t<fl+1.7 else None
     if base is not None: base=titles(base,t)
     if t>=fl-0.1:
         logo=V.logo_scene(t)
+        if HOK: end_text(logo,t)
         R=V.lmaxd*3.2*eo(seg(t,fl,fl+1.5)); dd=np.hypot(V.xx-V.SXc,V.yy-V.SYc); m=sm((R-dd)/(V.lmaxd*0.12))[...,None]
         out=(base*(1-m)+logo*m) if base is not None else logo; out=out+(1-out)*float(math.exp(-((t-fl-0.12)/0.2)**2)*0.75)
     else: out=base
